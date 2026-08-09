@@ -1,0 +1,2031 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 Study Planner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #B79CD8;
+            --primary-dark: #9E7FC7;
+            --primary-text: #7C5DB0;
+            --success: #A8DDC8;
+            --success-text: #3E8368;
+            --danger: #F3AFC0;
+            --danger-text: #C05576;
+            --bg: #FBF7FD;
+            --card-shadow: 0 8px 22px rgba(183, 156, 216, 0.14);
+            --radius: 22px;
+            --transition: all 0.25s ease;
+        }
+
+        body {
+            background: linear-gradient(180deg, #FBF7FD 0%, #F6F0FB 100%);
+            min-height: 100vh;
+            padding: 1rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #4A3B5C;
+        }
+
+        .app-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), #E5CFF7);
+            color: #4A3B5C;
+            padding: 1.2rem 1.6rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+        }
+        .header h1 {
+            font-size: 1.4rem;
+        }
+        .header-stats {
+            display: flex;
+            gap: 1.2rem;
+            background: rgba(255, 255, 255, 0.35);
+            padding: 0.4rem 1.2rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+        }
+        .header-stats span {
+            font-weight: bold;
+        }
+
+        .add-task-section {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.2rem;
+            margin-bottom: 1.2rem;
+            box-shadow: var(--card-shadow);
+        }
+        .task-input-group {
+            display: flex;
+            gap: 0.6rem;
+        }
+        .task-input-group input {
+            flex: 1;
+            padding: 0.7rem 1.1rem;
+            border: 2px solid #E3D9ED;
+            border-radius: 50px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+        .task-input-group input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+        .btn-add {
+            background: var(--primary);
+            color: #4A3B5C;
+            border: none;
+            padding: 0.7rem 1.6rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .btn-add:hover {
+            background: var(--primary-dark);
+        }
+
+        .bulk-add-section {
+            margin-top: 0.9rem;
+            padding-top: 0.9rem;
+            border-top: 1px dashed #E3D9ED;
+        }
+        .bulk-add-section summary {
+            cursor: pointer;
+            color: var(--primary-text);
+            font-weight: 600;
+            font-size: 0.88rem;
+            padding: 0.2rem 0;
+            list-style: none;
+        }
+        .bulk-add-section summary::-webkit-details-marker { display: none; }
+        .bulk-add-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            margin-top: 0.6rem;
+        }
+        .bulk-add-area textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 0.7rem 0.9rem;
+            border: 2px solid #E3D9ED;
+            border-radius: 14px;
+            font-size: 0.88rem;
+            font-family: inherit;
+            resize: vertical;
+            background: #FAF6FD;
+        }
+        .bulk-add-area textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            background: white;
+        }
+        .bulk-actions {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+        }
+        .btn-bulk-add {
+            background: var(--success);
+            color: var(--success-text);
+            border: none;
+            padding: 0.5rem 1.4rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .bulk-count {
+            font-size: 0.78rem;
+            color: #8A7B98;
+        }
+
+        .study-timer-section {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.2rem;
+            margin-bottom: 1.2rem;
+            box-shadow: var(--card-shadow);
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 1.2rem;
+            align-items: center;
+        }
+
+        .timer-visual-wrap {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            flex-shrink: 0;
+        }
+        .timer-visual-wrap svg {
+            width: 150px;
+            height: 150px;
+            transform: rotate(-90deg);
+        }
+        .timer-track {
+            fill: none;
+            stroke: #F3EDFA;
+            stroke-width: 10;
+        }
+        .timer-progress {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 10;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.1s linear;
+        }
+        .timer-progress.overtime {
+            stroke: var(--danger);
+        }
+        .timer-progress.done {
+            stroke: var(--success);
+        }
+        .timer-center {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.1rem;
+        }
+        .timer-center .timer-time {
+            font-size: 1.35rem;
+            font-weight: bold;
+            color: var(--primary-text);
+            font-variant-numeric: tabular-nums;
+            font-family: 'Courier New', monospace;
+        }
+        .timer-center .timer-sub {
+            font-size: 0.62rem;
+            color: #A398AC;
+        }
+        .timer-visual-wrap.pulse .timer-center .timer-time {
+            animation: pulseBeat 1s ease-in-out infinite;
+        }
+        @keyframes pulseBeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        .study-timer-info .topic-name {
+            font-weight: bold;
+            font-size: 1rem;
+            color: #4A3B5C;
+        }
+        .study-timer-info .topic-stats {
+            font-size: 0.8rem;
+            color: #8A7B98;
+        }
+        .timer-goal-row {
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .timer-goal-row label {
+            font-size: 0.78rem;
+            color: #8A7B98;
+        }
+        .timer-goal-row input {
+            width: 64px;
+            padding: 0.25rem 0.4rem;
+            border: 1px solid #E3D9ED;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            text-align: center;
+            font-family: inherit;
+        }
+        .study-timer-controls {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+        .study-timer-controls button {
+            padding: 0.45rem 1rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.82rem;
+        }
+        .study-timer-controls .btn-start {
+            background: var(--success);
+            color: var(--success-text);
+        }
+        .study-timer-controls .btn-pause {
+            background: #FBE3B3;
+            color: #9A7526;
+        }
+        .study-timer-controls .btn-reset {
+            background: var(--danger);
+            color: var(--danger-text);
+        }
+        .study-timer-controls .btn-stop-save {
+            background: var(--primary);
+            color: #4A3B5C;
+        }
+        .study-timer-status {
+            font-size: 0.82rem;
+            color: #8A7B98;
+            padding: 0.3rem 1rem;
+            background: #FAF6FD;
+            border-radius: 50px;
+            grid-column: 1 / -1;
+            text-align: center;
+        }
+
+        .budget-section {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.2rem;
+            margin-bottom: 1.2rem;
+            box-shadow: var(--card-shadow);
+        }
+        .budget-section h3 {
+            margin-bottom: 0.9rem;
+            font-size: 1rem;
+        }
+        .budget-inputs {
+            display: flex;
+            gap: 0.9rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .budget-inputs label {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            color: #5A4E66;
+        }
+        .budget-inputs input[type="time"] {
+            padding: 0.4rem 0.7rem;
+            border: 2px solid #E3D9ED;
+            border-radius: 12px;
+            font-size: 0.88rem;
+        }
+        .btn-set-budget {
+            background: var(--primary);
+            color: #4A3B5C;
+            border: none;
+            padding: 0.55rem 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .budget-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 0.7rem;
+            margin-top: 1rem;
+        }
+        .budget-stat {
+            background: #FAF6FD;
+            border-radius: 12px;
+            padding: 0.7rem 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .budget-stat.highlight {
+            background: #F0EDFF;
+            border: 2px solid var(--primary);
+        }
+        .budget-stat-label {
+            font-size: 0.7rem;
+            color: #8A7B98;
+        }
+        .budget-stat-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #4A3B5C;
+            font-variant-numeric: tabular-nums;
+        }
+        .budget-stat.highlight .budget-stat-value {
+            color: var(--primary-text);
+        }
+        .budget-bar-track {
+            margin-top: 0.9rem;
+            height: 8px;
+            background: #F3EDFA;
+            border-radius: 50px;
+            overflow: hidden;
+        }
+        .budget-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #E5CFF7);
+            border-radius: 50px;
+            transition: width 0.5s ease;
+        }
+
+        .split-section {
+            display: flex;
+            gap: 1.2rem;
+            align-items: flex-start;
+            margin-bottom: 1.2rem;
+        }
+        .split-section .planner-section,
+        .split-section .ideal-plan-section {
+            flex: 1;
+            min-width: 0;
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.1rem 1.3rem;
+            box-shadow: var(--card-shadow);
+        }
+        .planner-section summary,
+        .ideal-plan-section summary {
+            cursor: pointer;
+            color: var(--primary-text);
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.2rem 0;
+            list-style: none;
+        }
+        .planner-section summary::-webkit-details-marker,
+        .ideal-plan-section summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .planner-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.8rem;
+            margin-bottom: 0.2rem;
+            flex-wrap: wrap;
+        }
+        .planner-toolbar input[type="date"] {
+            padding: 0.35rem 0.6rem;
+            border: 1px solid #E3D9ED;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            background: #FAF6FD;
+        }
+        .planner-toolbar button {
+            padding: 0.35rem 0.9rem;
+            border: none;
+            border-radius: 50px;
+            background: var(--primary);
+            color: #4A3B5C;
+            font-size: 0.72rem;
+            cursor: pointer;
+        }
+        .planner-list {
+            margin-top: 0.7rem;
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid #F3EDFA;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+        .planner-row {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid #F3EDFA;
+        }
+        .planner-row .planner-hour {
+            flex-shrink: 0;
+            width: 52px;
+            font-size: 0.75rem;
+            color: #8A7B98;
+            text-align: center;
+            background: #FAF6FD;
+            border-radius: 10px;
+            padding: 0.25rem 0;
+        }
+        .planner-row.current-hour .planner-hour {
+            background: var(--primary);
+            color: #4A3B5C;
+            font-weight: bold;
+        }
+        .planner-row input {
+            flex: 1;
+            border: none;
+            border-bottom: 1px dashed #E3D9ED;
+            padding: 0.3rem 0.2rem;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: transparent;
+            color: #4A3B5C;
+        }
+        .planner-row input:focus {
+            outline: none;
+            border-bottom: 1px solid var(--primary);
+        }
+        .planner-row input::placeholder {
+            color: #C7B9D6;
+        }
+
+        .ideal-hint {
+            font-size: 0.72rem;
+            color: #A398AC;
+            margin: 0.5rem 0 0.7rem;
+        }
+        .ideal-durations {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+        .ideal-duration-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.3rem 0.5rem;
+            background: #FAF6FD;
+            border-radius: 12px;
+        }
+        .ideal-duration-row .idr-text {
+            flex: 1;
+            font-size: 0.82rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .ideal-duration-row input {
+            width: 58px;
+            padding: 0.25rem 0.35rem;
+            border: 1px solid #E3D9ED;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            text-align: center;
+            font-family: inherit;
+        }
+        .idr-unit {
+            font-size: 0.68rem;
+            color: #A398AC;
+        }
+        .ideal-empty {
+            font-size: 0.82rem;
+            color: #A398AC;
+            text-align: center;
+            padding: 0.8rem 0;
+        }
+        .btn-generate-ideal {
+            width: 100%;
+            margin-top: 0.9rem;
+            padding: 0.55rem 1rem;
+            border: none;
+            border-radius: 50px;
+            background: var(--primary);
+            color: #4A3B5C;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .ideal-blocks {
+            margin-top: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .ideal-block {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.55rem;
+            border-radius: 12px;
+            background: #F3EDFA;
+            border-left: 3px solid var(--primary);
+        }
+        .ideal-block.is-break {
+            background: #FBE7ED;
+            border-left-color: var(--danger);
+        }
+        .ideal-block .ib-time {
+            flex-shrink: 0;
+            font-size: 0.68rem;
+            color: #8A7B98;
+            width: 92px;
+        }
+        .ideal-block input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 0.82rem;
+            color: #4A3B5C;
+            font-family: inherit;
+        }
+        .ideal-block input:focus {
+            outline: none;
+        }
+        .ideal-block .ib-remove {
+            background: none;
+            border: none;
+            color: #C7B9D6;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .split-section {
+                flex-direction: column;
+            }
+            .study-timer-section {
+                grid-template-columns: 1fr;
+                justify-items: center;
+                text-align: center;
+            }
+        }
+
+        .task-item {
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 0.55rem;
+            box-shadow: 0 2px 6px rgba(183, 156, 216, 0.1);
+        }
+        .task-item.active-task {
+            outline: 2px solid var(--primary);
+        }
+        .task-main {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.7rem 1rem;
+        }
+        .task-checkbox {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid #E3D9ED;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: var(--transition);
+        }
+        .task-checkbox.completed {
+            background: var(--success);
+            border-color: var(--success);
+            color: var(--success-text);
+        }
+        .task-text {
+            flex: 1;
+            font-size: 0.95rem;
+        }
+        .task-text.completed-text {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+        .task-text-input {
+            flex: 1;
+            font-size: 0.95rem;
+            font-family: inherit;
+            border: none;
+            border-bottom: 1px solid var(--primary);
+            background: #FAF6FD;
+            padding: 0.15rem 0.3rem;
+            color: #4A3B5C;
+        }
+        .task-text-input:focus {
+            outline: none;
+        }
+
+        .subtask-toggle-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #A398AC;
+            font-size: 0.72rem;
+            padding: 0.2rem 0.4rem;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        .subtask-toggle-btn:hover {
+            background: #F3EDFA;
+        }
+        .subtask-list {
+            padding: 0 1rem 0.7rem 3.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .subtask-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .subtask-checkbox {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid #E3D9ED;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.6rem;
+        }
+        .subtask-checkbox.completed {
+            background: var(--success);
+            border-color: var(--success);
+            color: var(--success-text);
+        }
+        .subtask-text {
+            flex: 1;
+            font-size: 0.82rem;
+            color: #5A4E66;
+        }
+        .subtask-text.completed-text {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+        .subtask-text-input {
+            flex: 1;
+            font-size: 0.82rem;
+            font-family: inherit;
+            border: none;
+            border-bottom: 1px solid var(--primary);
+            background: #FAF6FD;
+            padding: 0.1rem 0.3rem;
+            color: #5A4E66;
+        }
+        .subtask-text-input:focus {
+            outline: none;
+        }
+        .subtask-actions button {
+            background: none;
+            border: none;
+            padding: 0.15rem 0.35rem;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #C7B9D6;
+            font-size: 0.75rem;
+        }
+        .subtask-actions button:hover {
+            background: #F3EDFA;
+        }
+        .subtask-add-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.1rem;
+        }
+        .subtask-add-row input {
+            flex: 1;
+            padding: 0.3rem 0.6rem;
+            border: 1px solid #E3D9ED;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            font-family: inherit;
+            background: white;
+        }
+        .subtask-add-row input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .subtask-add-row button {
+            background: var(--primary);
+            color: #4A3B5C;
+            border: none;
+            padding: 0.3rem 0.8rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .task-study-time {
+            background: #F3EDFA;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.72rem;
+            color: var(--primary-text);
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+        .task-actions {
+            display: flex;
+            gap: 0.2rem;
+            flex-shrink: 0;
+        }
+        .task-actions button {
+            background: none;
+            border: none;
+            padding: 0.3rem 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #A398AC;
+        }
+        .task-actions button:hover {
+            background: #F3EDFA;
+        }
+        .task-actions .delete-btn:hover {
+            color: var(--danger-text);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(74, 59, 92, 0.92);
+            color: white;
+            padding: 0.7rem 1.4rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            z-index: 1000;
+            animation: fadeInUp 0.4s ease;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem;
+            color: #A398AC;
+            background: white;
+            border-radius: var(--radius);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+
+        <div class="header">
+            <h1>🧠 Study Planner</h1>
+            <div class="header-stats">
+                <div>✅ <span id="completedCount">0</span></div>
+                <div>📋 <span id="remainingCount">0</span></div>
+                <div>⏱️ <span id="totalStudyTime">0h 0m</span></div>
+            </div>
+        </div>
+
+        <div class="add-task-section">
+            <div class="task-input-group">
+                <input type="text" id="taskInput" placeholder="New subject..." />
+                <button class="btn-add" id="addTaskBtn">➕ Add</button>
+            </div>
+
+            <div class="bulk-add-section">
+                <details>
+                    <summary>📋 Add multiple</summary>
+                    <div class="bulk-add-area">
+                        <textarea id="bulkTextarea" placeholder="Write one subject per line, or separate with commas/semicolons..."></textarea>
+                        <div class="bulk-actions">
+                            <button class="btn-bulk-add" id="bulkAddBtn">📥 Add all</button>
+                            <span class="bulk-count" id="bulkCount">0 subjects</span>
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <div class="study-timer-section" id="studyTimerSection">
+            <div class="timer-visual-wrap" id="timerVisualWrap">
+                <svg viewBox="0 0 150 150">
+                    <circle class="timer-track" cx="75" cy="75" r="65"></circle>
+                    <circle class="timer-progress" id="timerProgressRing" cx="75" cy="75" r="65"
+                    stroke-dasharray="408.4" stroke-dashoffset="0"></circle>
+                </svg>
+                <div class="timer-center">
+                    <div class="timer-time" id="studyTimerDisplay">00:00:00</div>
+                    <div class="timer-sub" id="timerSubLabel">elapsed</div>
+                </div>
+            </div>
+            <div class="study-timer-info">
+                <div class="topic-name" id="timerTopicName">No subject selected</div>
+                <div class="topic-stats" id="timerSubtaskLine" style="display:none;"></div>
+                <div class="topic-stats" id="timerTopicStats">Total studied: 0h 0m</div>
+                <div class="timer-goal-row">
+                    <label for="timerGoalInput">🎯 Goal</label>
+                    <input type="number" id="timerGoalInput" min="0" step="5" placeholder="min" />
+                    <label for="timerGoalInput" style="margin-left:-0.2rem;">min</label>
+                </div>
+            </div>
+            <div class="study-timer-controls">
+                <button class="btn-start" id="timerStartBtn">▶ Start</button>
+                <button class="btn-pause" id="timerPauseBtn">⏸ Pause</button>
+                <button class="btn-reset" id="timerResetBtn">⏹ Reset</button>
+                <button class="btn-stop-save" id="timerSaveBtn">💾 Save</button>
+            </div>
+            <div class="study-timer-status" id="timerStatus">⏳ Ready - pick a subject from the list</div>
+        </div>
+
+        <div class="budget-section" id="budgetSection">
+            <h3>🗓️ Today's study window</h3>
+            <div class="budget-inputs">
+                <label>From <input type="time" id="budgetStart" value="08:00"></label>
+                <label>To <input type="time" id="budgetEnd" value="22:00"></label>
+                <button class="btn-set-budget" id="setBudgetBtn">✅ Set today's window</button>
+            </div>
+            <div class="budget-stats" id="budgetStats" style="display:none;">
+                <div class="budget-stat">
+                    <span class="budget-stat-label">⏳ Total window</span>
+                    <span class="budget-stat-value" id="budgetTotal">0h 0m</span>
+                </div>
+                <div class="budget-stat">
+                    <span class="budget-stat-label">📖 Studied</span>
+                    <span class="budget-stat-value" id="budgetUsed">0h 0m</span>
+                </div>
+                <div class="budget-stat highlight">
+                    <span class="budget-stat-label">🎯 Remaining</span>
+                    <span class="budget-stat-value" id="budgetRemaining">0h 0m</span>
+                </div>
+                <div class="budget-stat">
+                    <span class="budget-stat-label">🕐 Until window ends</span>
+                    <span class="budget-stat-value" id="budgetClockRemaining">0h 0m</span>
+                </div>
+            </div>
+            <div class="budget-bar-track" id="budgetBarTrack" style="display:none;">
+                <div class="budget-bar-fill" id="budgetBarFill"></div>
+            </div>
+        </div>
+
+        <div class="split-section">
+            <div class="planner-section">
+                <details id="plannerDetails">
+                    <summary>🗓️ My daily planner (hourly)</summary>
+                    <div class="planner-toolbar">
+                        <input type="date" id="plannerDatePicker">
+                        <button id="plannerTodayBtn" type="button">Today</button>
+                    </div>
+                    <div class="planner-list" id="plannerList"></div>
+                </details>
+            </div>
+
+            <div class="ideal-plan-section">
+                <details id="idealPlanDetails">
+                    <summary>🌟 Ideal plan</summary>
+                    <div class="ideal-hint">Set the duration for each subject (min 60 minutes), I'll handle the rest ✨</div>
+                    <div class="ideal-durations" id="idealDurations"></div>
+                    <button class="btn-generate-ideal" id="generateIdealBtn">🪄 Auto-schedule my day</button>
+                    <div class="ideal-blocks" id="idealBlocks"></div>
+                </details>
+            </div>
+        </div>
+
+        <div id="taskList"></div>
+
+    </div>
+
+    <script>
+        class StudySystem {
+            constructor() {
+                this.tasks = [];
+                this.taskIdCounter = Date.now();
+
+                this.RING_CIRCUMFERENCE = 2 * Math.PI * 65;
+
+                this.timer = {
+                    seconds: 0,
+                    isRunning: false,
+                    isPaused: false,
+                    interval: null,
+                    currentTaskId: null,
+                    startTimestamp: null,
+                    lastBudgetTick: null,
+                    goalMinutes: 0,
+                    goalReached: false,
+                    frameId: null
+                };
+
+                this.budget = { startTime: '08:00', endTime: '22:00', date: null, usedSeconds: 0 };
+
+                this.plannerByDate = {};
+                this.plannerViewDate = null;
+
+                this.taskDurations = {};
+                this.idealPlan = { date: null, blocks: [] };
+
+                this.taskListEl = document.getElementById('taskList');
+                this.completedCount = document.getElementById('completedCount');
+                this.remainingCount = document.getElementById('remainingCount');
+                this.totalStudyTime = document.getElementById('totalStudyTime');
+                this.studyTimerDisplay = document.getElementById('studyTimerDisplay');
+                this.timerSubLabel = document.getElementById('timerSubLabel');
+                this.timerVisualWrap = document.getElementById('timerVisualWrap');
+                this.timerProgressRing = document.getElementById('timerProgressRing');
+                this.timerGoalInput = document.getElementById('timerGoalInput');
+                this.timerTopicName = document.getElementById('timerTopicName');
+                this.timerSubtaskLine = document.getElementById('timerSubtaskLine');
+                this.timerTopicStats = document.getElementById('timerTopicStats');
+                this.expandedSubtasks = {};
+                this.timerStatus = document.getElementById('timerStatus');
+                this.bulkTextarea = document.getElementById('bulkTextarea');
+                this.bulkCount = document.getElementById('bulkCount');
+                this.budgetStats = document.getElementById('budgetStats');
+                this.budgetBarTrack = document.getElementById('budgetBarTrack');
+                this.plannerList = document.getElementById('plannerList');
+                this.plannerDatePicker = document.getElementById('plannerDatePicker');
+                this.idealDurationsEl = document.getElementById('idealDurations');
+                this.idealBlocksEl = document.getElementById('idealBlocks');
+
+                this.timerProgressRing.setAttribute('stroke-dasharray', this.RING_CIRCUMFERENCE.toFixed(1));
+
+                this.audioCtx = null;
+                this._saveTimeout = null;
+
+                this.loadFromStorage();
+                this.resumeTimerIfNeeded();
+                this.initEventListeners();
+
+                if (this.tasks.length === 0) this.addSampleTasks();
+
+                this.render();
+                this.updateTimerDisplay();
+                this.updateBulkCount();
+                this.renderBudget();
+                this.renderPlanner();
+                this.renderIdealDurations();
+                this.renderIdealBlocks();
+
+                setInterval(() => this.renderBudget(), 5000);
+                setInterval(() => this.updatePlannerCurrentHour(), 30000);
+
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') {
+                        this.syncTimerFromClock();
+                        this.updateTimerDisplay();
+                        this.renderBudget();
+                        this.saveToStorage();
+                    }
+                });
+
+                window.app = this;
+            }
+
+            addSampleTasks() {
+                const topics = ['Rheumatology', 'Endocrine drugs', 'ECG & arrhythmias'];
+                topics.forEach(text => {
+                    this.tasks.push({
+                        id: this.taskIdCounter++,
+                        text,
+                        completed: false,
+                        createdAt: new Date().toISOString(),
+                        studyTime: 0,
+                        subtasks: []
+                    });
+                });
+                this.saveToStorage();
+            }
+
+            todayStr() {
+                return new Date().toISOString().split('T')[0];
+            }
+
+            loadFromStorage() {
+                try {
+                    const saved = localStorage.getItem('study_system_data');
+                    if (saved) {
+                        const data = JSON.parse(saved);
+                        this.tasks = (data.tasks || []).map(t => ({ subtasks: [], ...t }));
+                        this.taskIdCounter = data.taskIdCounter || Date.now();
+                        this.timer.seconds = data.timerSeconds || 0;
+                        this.timer.currentTaskId = data.timerCurrentTaskId || null;
+                        this.timer.isRunning = data.timerIsRunning || false;
+                        this.timer.startTimestamp = data.timerStartTimestamp || null;
+                        this.timer.goalMinutes = data.timerGoalMinutes || 0;
+                        if (data.budget) this.budget = Object.assign(this.budget, data.budget);
+                        if (data.plannerByDate) this.plannerByDate = data.plannerByDate;
+                        if (data.taskDurations) this.taskDurations = data.taskDurations;
+                        if (data.idealPlan) this.idealPlan = Object.assign(this.idealPlan, data.idealPlan);
+                    }
+                } catch (e) {
+                    console.log('Error loading data');
+                }
+                this.plannerViewDate = this.todayStr();
+            }
+
+            saveToStorage() {
+                if (this._saveTimeout) {
+                    clearTimeout(this._saveTimeout);
+                }
+                this._saveTimeout = setTimeout(() => {
+                    localStorage.setItem('study_system_data', JSON.stringify({
+                        tasks: this.tasks,
+                        taskIdCounter: this.taskIdCounter,
+                        timerSeconds: this.timer.seconds,
+                        timerCurrentTaskId: this.timer.currentTaskId,
+                        timerIsRunning: this.timer.isRunning,
+                        timerStartTimestamp: this.timer.startTimestamp,
+                        timerGoalMinutes: this.timer.goalMinutes,
+                        budget: this.budget,
+                        plannerByDate: this.plannerByDate,
+                        taskDurations: this.taskDurations,
+                        idealPlan: this.idealPlan
+                    }));
+                    this._saveTimeout = null;
+                }, 500);
+            }
+
+            updateBulkCount() {
+                const text = this.bulkTextarea.value.trim();
+                const tasks = this.parseBulkTasks(text);
+                this.bulkCount.textContent = `${tasks.length} subjects`;
+                return tasks;
+            }
+
+            parseBulkTasks(text) {
+                if (!text.trim()) return [];
+                let tasks = text
+                    .split(/[\n,;•\-]/)
+                    .map(t => t.trim())
+                    .filter(t => t.length > 0)
+                    .map(t => t.replace(/^\d+[\.\-\s]+/, '').trim())
+                    .filter(t => t.length > 0);
+                if (tasks.length === 1 && tasks[0].includes(',')) {
+                    tasks = tasks[0].split(',').map(t => t.trim()).filter(t => t.length > 0);
+                }
+                return tasks;
+            }
+
+            bulkAddTasks() {
+                const text = this.bulkTextarea.value.trim();
+                if (!text) { this.showToast('⚠️ Write something first'); return; }
+                const tasks = this.parseBulkTasks(text);
+                if (tasks.length === 0) { this.showToast('⚠️ No subjects found'); return; }
+
+                tasks.forEach(taskText => {
+                    this.tasks.push({
+                        id: this.taskIdCounter++,
+                        text: taskText,
+                        completed: false,
+                        createdAt: new Date().toISOString(),
+                        studyTime: 0,
+                        subtasks: []
+                    });
+                });
+
+                this.bulkTextarea.value = '';
+                this.updateBulkCount();
+                this.render();
+                this.saveToStorage();
+                this.showToast(`✅ ${tasks.length} subjects added`);
+            }
+
+            addTask() {
+                const input = document.getElementById('taskInput');
+                const text = input.value.trim();
+                if (!text) { input.focus(); this.showToast('⚠️ Write something'); return; }
+
+                this.tasks.push({
+                    id: this.taskIdCounter++,
+                    text,
+                    completed: false,
+                    createdAt: new Date().toISOString(),
+                    studyTime: 0,
+                    subtasks: []
+                });
+
+                input.value = '';
+                input.focus();
+                this.render();
+                this.saveToStorage();
+                this.showToast('🎯 Added');
+            }
+
+            toggleComplete(taskId) {
+                const task = this.tasks.find(t => t.id === taskId);
+                if (!task) return;
+
+                if (this.timer.isRunning && this.timer.currentTaskId === taskId) this.stopTimer();
+
+                task.completed = !task.completed;
+                this.render();
+                this.saveToStorage();
+                if (task.completed) this.showToast(`✅ "${task.text}" done`);
+            }
+
+            deleteTask(taskId) {
+                if (!confirm('Delete this subject?')) return;
+                if (this.timer.isRunning && this.timer.currentTaskId === taskId) this.stopTimer();
+                this.tasks = this.tasks.filter(t => t.id !== taskId);
+                delete this.taskDurations[taskId];
+                this.render();
+                this.saveToStorage();
+                this.renderIdealDurations();
+            }
+
+            startEditTask(taskId) {
+                this.editingTaskId = taskId;
+                this.render();
+            }
+
+            saveEditTask(taskId, newText) {
+                const task = this.tasks.find(t => t.id === taskId);
+                const trimmed = (newText || '').trim();
+                if (task && trimmed) task.text = trimmed;
+                this.editingTaskId = null;
+                this.render();
+                this.saveToStorage();
+                if (this.timer.currentTaskId === taskId && task) {
+                    this.timerTopicName.textContent = task.text;
+                }
+            }
+
+            cancelEditTask() {
+                this.editingTaskId = null;
+                this.render();
+            }
+
+            toggleSubtaskPanel(taskId) {
+                this.expandedSubtasks[taskId] = !this.expandedSubtasks[taskId];
+                this.render();
+            }
+
+            addSubtask(taskId, text) {
+                const task = this.tasks.find(t => t.id === taskId);
+                const trimmed = (text || '').trim();
+                if (!task || !trimmed) return;
+                if (!task.subtasks) task.subtasks = [];
+                task.subtasks.push({ id: this.taskIdCounter++, text: trimmed, completed: false });
+                this.saveToStorage();
+                this.render();
+                this.updateTimerSubtaskLine();
+            }
+
+            toggleSubtask(taskId, subtaskId) {
+                const task = this.tasks.find(t => t.id === taskId);
+                if (!task || !task.subtasks) return;
+                const sub = task.subtasks.find(s => s.id === subtaskId);
+                if (!sub) return;
+                sub.completed = !sub.completed;
+                this.saveToStorage();
+                this.render();
+                this.updateTimerSubtaskLine();
+            }
+
+            deleteSubtask(taskId, subtaskId) {
+                const task = this.tasks.find(t => t.id === taskId);
+                if (!task || !task.subtasks) return;
+                task.subtasks = task.subtasks.filter(s => s.id !== subtaskId);
+                this.saveToStorage();
+                this.render();
+                this.updateTimerSubtaskLine();
+            }
+
+            startEditSubtask(taskId, subtaskId) {
+                this.editingSubtaskId = subtaskId;
+                this.render();
+            }
+
+            saveEditSubtask(taskId, subtaskId, newText) {
+                const task = this.tasks.find(t => t.id === taskId);
+                const trimmed = (newText || '').trim();
+                if (task && task.subtasks) {
+                    const sub = task.subtasks.find(s => s.id === subtaskId);
+                    if (sub && trimmed) sub.text = trimmed;
+                }
+                this.editingSubtaskId = null;
+                this.render();
+                this.saveToStorage();
+                this.updateTimerSubtaskLine();
+            }
+
+            cancelEditSubtask() {
+                this.editingSubtaskId = null;
+                this.render();
+            }
+
+            getFirstOpenSubtask(task) {
+                if (!task || !task.subtasks || task.subtasks.length === 0) return null;
+                return task.subtasks.find(s => !s.completed) || null;
+            }
+
+            updateTimerSubtaskLine() {
+                const task = this.tasks.find(t => t.id === this.timer.currentTaskId);
+                if (!task) { this.timerSubtaskLine.style.display = 'none'; return; }
+                const firstOpen = this.getFirstOpenSubtask(task);
+                if (firstOpen) {
+                    this.timerSubtaskLine.style.display = 'block';
+                    this.timerSubtaskLine.textContent = `▸ ${firstOpen.text}`;
+                } else {
+                    this.timerSubtaskLine.style.display = 'none';
+                }
+            }
+
+            selectForTimer(taskId) {
+                const task = this.tasks.find(t => t.id === taskId);
+                if (!task) return;
+                if (this.timer.isRunning) this.pauseTimer();
+
+                this.timer.currentTaskId = taskId;
+                this.timer.seconds = 0;
+                this.timer.isRunning = false;
+                this.timer.isPaused = false;
+                this.timer.startTimestamp = null;
+                this.timer.goalReached = false;
+
+                this.timerTopicName.textContent = task.text;
+                this.updateTimerInfo(task);
+                this.updateTimerSubtaskLine();
+                this.timerStatus.textContent = '⏳ Ready - press start';
+                this.updateTimerDisplay();
+                this.saveToStorage();
+                this.render();
+                this.showToast(`🎯 Selected: ${task.text}`);
+            }
+
+            playBeep() {
+                try {
+                    if (!this.audioCtx) {
+                        this.audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+                    }
+                    const ctx = this.audioCtx;
+                    if (ctx.state === 'suspended') ctx.resume();
+
+                    const playTone = (delay) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.value = 880;
+                        gain.gain.setValueAtTime(0.0001, ctx.currentTime + delay);
+                        gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + delay + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + delay + 0.3);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(ctx.currentTime + delay);
+                        osc.stop(ctx.currentTime + delay + 0.32);
+                    };
+                    playTone(0);
+                    playTone(0.4);
+                    playTone(0.8);
+                } catch (e) {
+                    console.log('Beep failed', e);
+                }
+            }
+
+            syncTimerFromClock() {
+                if (this.timer.isRunning && this.timer.startTimestamp) {
+                    const now = Date.now();
+                    const elapsed = Math.floor((now - this.timer.startTimestamp) / 1000);
+                    const prevSeconds = this.timer.seconds;
+                    this.timer.seconds += elapsed;
+                    this.timer.startTimestamp = now;
+
+                    if (this.budget.date) {
+                        this.checkBudgetDayReset();
+                        const lastTick = this.timer.lastBudgetTick || this.timer.startTimestamp;
+                        const delta = Math.max(0, Math.floor((now - lastTick) / 1000));
+                        this.budget.usedSeconds += delta;
+                    }
+                    this.timer.lastBudgetTick = now;
+
+                    if (this.timer.goalMinutes > 0) {
+                        const goalSeconds = this.timer.goalMinutes * 60;
+                        if (prevSeconds < goalSeconds && this.timer.seconds >= goalSeconds && !this.timer.goalReached) {
+                            this.timer.goalReached = true;
+                            this.playBeep();
+                            this.timerStatus.textContent = '🔔 Goal time reached!';
+                            this.showToast('🔔 Time is up!');
+                        }
+                    }
+                }
+            }
+
+            resumeTimerIfNeeded() {
+                if (this.timer.isRunning && this.timer.currentTaskId) {
+                    const task = this.tasks.find(t => t.id === this.timer.currentTaskId);
+                    if (task) {
+                        this.timer.lastBudgetTick = this.timer.startTimestamp || Date.now();
+                        if (this.timer.goalMinutes > 0 && this.timer.seconds >= this.timer.goalMinutes * 60) {
+                            this.timer.goalReached = true;
+                        }
+                        this.syncTimerFromClock();
+                        this.startTimerInterval();
+                        this.timerStatus.textContent = '⏱️ Studying...';
+                        this.timerTopicName.textContent = task.text;
+                        this.updateTimerInfo(task);
+                        this.updateTimerSubtaskLine();
+                    } else {
+                        this.timer.isRunning = false;
+                    }
+                }
+                if (this.timerGoalInput) this.timerGoalInput.value = this.timer.goalMinutes || '';
+                this.updateTimerDisplay();
+            }
+
+            startTimerInterval() {
+                if (this.timer.interval) {
+                    clearInterval(this.timer.interval);
+                    this.timer.interval = null;
+                }
+                if (this.timer.frameId) {
+                    cancelAnimationFrame(this.timer.frameId);
+                    this.timer.frameId = null;
+                }
+
+                this.timer.lastBudgetTick = Date.now();
+
+                // Use setInterval for reliable counting
+                this.timer.interval = setInterval(() => {
+                    if (this.timer.isRunning) {
+                        this.timer.seconds++;
+                        
+                        // Update budget
+                        if (this.budget.date) {
+                            this.budget.usedSeconds++;
+                        }
+
+                        // Check goal
+                        if (this.timer.goalMinutes > 0) {
+                            const goalSeconds = this.timer.goalMinutes * 60;
+                            if (this.timer.seconds >= goalSeconds && !this.timer.goalReached) {
+                                this.timer.goalReached = true;
+                                this.playBeep();
+                                this.timerStatus.textContent = '🔔 Goal time reached!';
+                                this.showToast('🔔 Time is up!');
+                            }
+                        }
+
+                        this.saveToStorage();
+                    }
+                }, 1000);
+
+                // Use requestAnimationFrame for smooth display updates
+                const updateDisplay = () => {
+                    this.updateTimerDisplay();
+                    if (this.timer.isRunning) {
+                        this.timer.frameId = requestAnimationFrame(updateDisplay);
+                    } else {
+                        this.timer.frameId = null;
+                    }
+                };
+                this.timer.frameId = requestAnimationFrame(updateDisplay);
+            }
+
+            startTimer() {
+                let task = this.timer.currentTaskId ?
+                    this.tasks.find(t => t.id === this.timer.currentTaskId && !t.completed) :
+                    null;
+                if (!task) task = this.tasks.find(t => !t.completed);
+
+                if (!task) { this.showToast('⚠️ No subject selected'); return; }
+
+                if (this.timer.currentTaskId && this.timer.currentTaskId !== task.id) {
+                    this.timer.seconds = 0;
+                    this.timer.goalReached = false;
+                }
+
+                try {
+                    if (!this.audioCtx) this.audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+                    if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+                } catch (e) {}
+
+                const goalVal = parseInt(this.timerGoalInput.value, 10);
+                this.timer.goalMinutes = isNaN(goalVal) || goalVal < 0 ? 0 : goalVal;
+                if (this.timer.goalMinutes > 0 && this.timer.seconds >= this.timer.goalMinutes * 60) {
+                    this.timer.goalReached = true;
+                } else {
+                    this.timer.goalReached = false;
+                }
+
+                this.timer.currentTaskId = task.id;
+                this.timer.isRunning = true;
+                this.timer.isPaused = false;
+                this.timer.startTimestamp = Date.now();
+
+                this.startTimerInterval();
+
+                this.timerStatus.textContent = '⏱️ Studying...';
+                this.timerTopicName.textContent = task.text;
+                this.updateTimerInfo(task);
+                this.updateTimerSubtaskLine();
+                this.updateTimerDisplay();
+                this.showToast(`⏱️ Started: ${task.text}`);
+                this.saveToStorage();
+                this.render();
+            }
+
+            pauseTimer() {
+                if (!this.timer.isRunning) return;
+                this.timer.isRunning = false;
+                this.timer.isPaused = true;
+                this.timer.startTimestamp = null;
+                
+                if (this.timer.interval) {
+                    clearInterval(this.timer.interval);
+                    this.timer.interval = null;
+                }
+                if (this.timer.frameId) {
+                    cancelAnimationFrame(this.timer.frameId);
+                    this.timer.frameId = null;
+                }
+                
+                this.timerStatus.textContent = '⏸ Paused';
+                this.updateTimerDisplay();
+                this.renderBudget();
+                this.saveToStorage();
+            }
+
+            resetTimer() {
+                this.timer.isRunning = false;
+                this.timer.isPaused = false;
+                this.timer.startTimestamp = null;
+                this.timer.lastBudgetTick = null;
+                this.timer.goalReached = false;
+                
+                if (this.timer.interval) {
+                    clearInterval(this.timer.interval);
+                    this.timer.interval = null;
+                }
+                if (this.timer.frameId) {
+                    cancelAnimationFrame(this.timer.frameId);
+                    this.timer.frameId = null;
+                }
+                
+                this.timer.seconds = 0;
+                this.timer.currentTaskId = null;
+                this.timerStatus.textContent = '⏳ Ready - pick a subject from the list';
+                this.timerTopicName.textContent = 'No subject selected';
+                this.timerTopicStats.textContent = 'Total studied: 0h 0m';
+                this.timerSubtaskLine.style.display = 'none';
+                this.updateTimerDisplay();
+                this.saveToStorage();
+                this.render();
+            }
+
+            stopTimer() {
+                if (this.timer.interval) {
+                    clearInterval(this.timer.interval);
+                    this.timer.interval = null;
+                }
+                if (this.timer.frameId) {
+                    cancelAnimationFrame(this.timer.frameId);
+                    this.timer.frameId = null;
+                }
+                this.timer.isRunning = false;
+                this.timer.isPaused = false;
+                this.timer.startTimestamp = null;
+                this.timerStatus.textContent = '⏳ Timer stopped';
+            }
+
+            saveTimerTime() {
+                if (this.timer.seconds === 0) { this.showToast('⚠️ No time to save'); return; }
+
+                const task = this.tasks.find(t => t.id === this.timer.currentTaskId);
+                if (!task) { this.showToast('⚠️ No subject selected'); return; }
+
+                task.studyTime = (task.studyTime || 0) + this.timer.seconds;
+                const h = Math.floor(this.timer.seconds / 3600);
+                const m = Math.floor((this.timer.seconds % 3600) / 60);
+                this.showToast(`💾 ${h}h ${m}m saved for "${task.text}"`);
+
+                this.timer.seconds = 0;
+                this.timer.currentTaskId = null;
+                this.timer.isRunning = false;
+                this.timer.startTimestamp = null;
+                this.timer.lastBudgetTick = null;
+                this.timer.goalReached = false;
+                
+                if (this.timer.interval) {
+                    clearInterval(this.timer.interval);
+                    this.timer.interval = null;
+                }
+                if (this.timer.frameId) {
+                    cancelAnimationFrame(this.timer.frameId);
+                    this.timer.frameId = null;
+                }
+
+                this.timerStatus.textContent = '⏳ Time saved!';
+                this.timerTopicName.textContent = 'No subject selected';
+                this.timerSubtaskLine.style.display = 'none';
+                this.updateTimerDisplay();
+                this.saveToStorage();
+                this.render();
+                this.renderBudget();
+            }
+
+            updateTimerDisplay() {
+                const s = this.timer.seconds;
+                const h = Math.floor(s / 3600);
+                const m = Math.floor((s % 3600) / 60);
+                const sec = s % 60;
+                this.studyTimerDisplay.textContent =
+                    `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+
+                const goalSeconds = this.timer.goalMinutes > 0 ? this.timer.goalMinutes * 60 : null;
+                const ring = this.timerProgressRing;
+                const C = this.RING_CIRCUMFERENCE;
+
+                if (goalSeconds) {
+                    const pct = Math.min(1, s / goalSeconds);
+                    const offset = C * (1 - pct);
+                    ring.style.strokeDashoffset = offset.toFixed(1);
+                    ring.classList.toggle('overtime', s >= goalSeconds);
+                    ring.classList.toggle('done', false);
+                    this.timerSubLabel.textContent = s >= goalSeconds ?
+                        `+${this.formatHM(s - goalSeconds)} over` :
+                        `of ${this.timer.goalMinutes}m goal`;
+                } else {
+                    const cyclePct = (s % 3600) / 3600;
+                    const offset = C * (1 - cyclePct);
+                    ring.style.strokeDashoffset = offset.toFixed(1);
+                    ring.classList.remove('overtime');
+                    ring.classList.remove('done');
+                    this.timerSubLabel.textContent = 'elapsed';
+                }
+
+                this.timerVisualWrap.classList.toggle('pulse', this.timer.isRunning && goalSeconds && s >= goalSeconds);
+            }
+
+            updateTimerInfo(task) {
+                if (!task) return;
+                const totalSec = task.studyTime || 0;
+                const h = Math.floor(totalSec / 3600);
+                const m = Math.floor((totalSec % 3600) / 60);
+                this.timerTopicStats.textContent = `Total studied: ${h}h ${m}m`;
+            }
+
+            checkBudgetDayReset() {
+                if (this.budget.date && this.budget.date !== this.todayStr()) {
+                    this.budget.date = this.todayStr();
+                    this.budget.usedSeconds = 0;
+                    this.saveToStorage();
+                }
+            }
+
+            setBudget(startTime, endTime) {
+                this.budget.startTime = startTime;
+                this.budget.endTime = endTime;
+                this.budget.date = this.todayStr();
+                this.budget.usedSeconds = 0;
+                this.saveToStorage();
+                this.renderBudget();
+                this.showToast('🗓️ Today\'s window set');
+            }
+
+            getBudgetTotalSeconds() {
+                const [sh, sm] = this.budget.startTime.split(':').map(Number);
+                const [eh, em] = this.budget.endTime.split(':').map(Number);
+                let startMin = sh * 60 + sm;
+                let endMin = eh * 60 + em;
+                if (endMin <= startMin) endMin += 24 * 60;
+                return (endMin - startMin) * 60;
+            }
+
+            getBudgetClockRemainingSeconds() {
+                const now = new Date();
+                const [eh, em] = this.budget.endTime.split(':').map(Number);
+                const end = new Date(now);
+                end.setHours(eh, em, 0, 0);
+                if (end <= now) end.setDate(end.getDate() + 1);
+                return Math.max(0, Math.floor((end - now) / 1000));
+            }
+
+            formatHM(totalSeconds) {
+                const s = Math.max(0, Math.floor(totalSeconds));
+                const h = Math.floor(s / 3600);
+                const m = Math.floor((s % 3600) / 60);
+                return `${h}h ${m}m`;
+            }
+
+            renderBudget() {
+                if (!this.budgetStats) return;
+                
+                this.checkBudgetDayReset();
+
+                const hasBudget = !!this.budget.date;
+                this.budgetStats.style.display = hasBudget ? 'grid' : 'none';
+                if (this.budgetBarTrack) this.budgetBarTrack.style.display = hasBudget ? 'block' : 'none';
+                if (!hasBudget) return;
+
+                const total = this.getBudgetTotalSeconds();
+                const used = this.budget.usedSeconds;
+                const remaining = Math.max(0, total - used);
+                const clockRemaining = this.getBudgetClockRemainingSeconds();
+
+                document.getElementById('budgetTotal').textContent = this.formatHM(total);
+                document.getElementById('budgetUsed').textContent = this.formatHM(used);
+                document.getElementById('budgetRemaining').textContent = this.formatHM(remaining);
+                document.getElementById('budgetClockRemaining').textContent = this.formatHM(clockRemaining);
+
+                const barFill = document.getElementById('budgetBarFill');
+                if (barFill) {
+                    const pct = total > 0 ? Math.min(100, (used / total) * 100) : 0;
+                    barFill.style.width = `${pct}%`;
+                }
+            }
+
+            getPlannerSlots(dateStr) {
+                if (!this.plannerByDate[dateStr]) this.plannerByDate[dateStr] = {};
+                return this.plannerByDate[dateStr];
+            }
+
+            setPlannerSlot(hour, text) {
+                const slots = this.getPlannerSlots(this.plannerViewDate);
+                slots[hour] = text;
+                this.saveToStorage();
+            }
+
+            setPlannerViewDate(dateStr) {
+                if (!dateStr) return;
+                this.plannerViewDate = dateStr;
+                this.renderPlanner();
+            }
+
+            goToTodayPlanner() {
+                this.plannerViewDate = this.todayStr();
+                if (this.plannerDatePicker) this.plannerDatePicker.value = this.plannerViewDate;
+                this.renderPlanner();
+            }
+
+            renderPlanner() {
+                if (!this.plannerList) return;
+                if (!this.plannerViewDate) this.plannerViewDate = this.todayStr();
+                if (this.plannerDatePicker && this.plannerDatePicker.value !== this.plannerViewDate) {
+                    this.plannerDatePicker.value = this.plannerViewDate;
+                }
+
+                const slots = this.getPlannerSlots(this.plannerViewDate);
+                const isToday = this.plannerViewDate === this.todayStr();
+                const currentHour = new Date().getHours();
+
+                let html = '';
+                for (let h = 0; h < 24; h++) {
+                    const label = `${String(h).padStart(2, '0')}:00`;
+                    const value = slots[h] || '';
+                    const isNow = isToday && h === currentHour;
+                    html += `
+                            <div class="planner-row ${isNow ? 'current-hour' : ''}" data-hour="${h}">
+                                <span class="planner-hour">${label}</span>
+                                <input type="text" 
+                                       value="${value.replace(/"/g, '&quot;')}" 
+                                       placeholder="Your plan..." 
+                                       onchange="window.app.setPlannerSlot(${h}, this.value)" />
+                            </div>
+                        `;
+                }
+                this.plannerList.innerHTML = html;
+            }
+
+            updatePlannerCurrentHour() {
+                if (!this.plannerList) return;
+                const isToday = this.plannerViewDate === this.todayStr();
+                const currentHour = new Date().getHours();
+                this.plannerList.querySelectorAll('.planner-row').forEach(row => {
+                    const h = Number(row.dataset.hour);
+                    row.classList.toggle('current-hour', isToday && h === currentHour);
+                });
+            }
+
+            minutesToHHMM(mins) {
+                const m = ((mins % 1440) + 1440) % 1440;
+                const h = Math.floor(m / 60);
+                const mm = m % 60;
+                return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+            }
+
+            timeStrToMinutes(str) {
+                const [h, m] = str.split(':').map(Number);
+                return h * 60 + m;
+            }
+
+            setTaskDuration(taskId, minutes) {
+                let val = parseInt(minutes, 10);
+                if (isNaN(val) || val < 60) val = 60;
+                this.taskDurations[taskId] = val;
+                this.saveToStorage();
+            }
+
+            renderIdealDurations() {
+                if (!this.idealDurationsEl) return;
+                const pending = this.tasks.filter(t => !t.completed);
+                if (pending.length === 0) {
+                    this.idealDurationsEl.innerHTML = '<div class="ideal-empty">✨ No subjects to plan</div>';
+                    return;
+                }
+                this.idealDurationsEl.innerHTML = pending.map(task => {
+                    const mins = this.taskDurations[task.id] || 60;
+                    return `
+                            <div class="ideal-duration-row">
+                                <span class="idr-text">${task.text}</span>
+                                <input type="number" min="60" step="15" value="${mins}"
+                                       onchange="window.app.setTaskDuration(${task.id}, this.value)" />
+                                <span class="idr-unit">min</span>
+                            </div>
+                        `;
+                }).join('');
+            }
+
+            generateIdealPlan() {
+                const pending = this.tasks.filter(t => !t.completed);
+                if (pending.length === 0) { this.showToast('⚠️ Add a subject first'); return; }
+
+                const hasBudgetToday = this.budget.date === this.todayStr();
+                const startStr = hasBudgetToday ? this.budget.startTime : '08:00';
+                const endStr = hasBudgetToday ? this.budget.endTime : '22:00';
+
+                let startMin = this.timeStrToMinutes(startStr);
+                let endMin = this.timeStrToMinutes(endStr);
+                if (endMin <= startMin) endMin += 24 * 60;
+
+                let cursor = startMin;
+                let cumulative = 0;
+                const blocks = [];
+                let unscheduled = 0;
+
+                for (const task of pending) {
+                    const dur = this.taskDurations[task.id] || 60;
+                    if (cursor + dur > endMin) { unscheduled++; continue; }
+
+                    blocks.push({ type: 'study', start: cursor, end: cursor + dur, taskId: task.id, text: task.text });
+                    cursor += dur;
+                    cumulative += dur;
+
+                    if (cumulative >= 90 && cursor < endMin) {
+                        const breakEnd = Math.min(cursor + 30, endMin);
+                        blocks.push({ type: 'break', start: cursor, end: breakEnd, text: 'Break' });
+                        cursor = breakEnd;
+                        cumulative = 0;
+                    }
+                }
+
+                this.idealPlan.date = this.todayStr();
+                this.idealPlan.blocks = blocks;
+                this.saveToStorage();
+                this.renderIdealBlocks();
+
+                if (unscheduled > 0) {
+                    this.showToast(`🪄 Plan built, but ${unscheduled} subject(s) didn't fit`);
+                } else {
+                    this.showToast('🪄 Your plan for today is ready!');
+                }
+            }
+
+            updateIdealBlockText(index, text) {
+                if (!this.idealPlan.blocks[index]) return;
+                this.idealPlan.blocks[index].text = text.trim() || this.idealPlan.blocks[index].text;
+                this.saveToStorage();
+            }
+
+            removeIdealBlock(index) {
+                this.idealPlan.blocks.splice(index, 1);
+                this.saveToStorage();
+                this.renderIdealBlocks();
+            }
+
+            renderIdealBlocks() {
+                if (!this.idealBlocksEl) return;
+                const blocks = this.idealPlan.blocks || [];
+                if (blocks.length === 0) { this.idealBlocksEl.innerHTML = ''; return; }
+
+                this.idealBlocksEl.innerHTML = blocks.map((b, i) => `
+                        <div class="ideal-block ${b.type === 'break' ? 'is-break' : ''}">
+                            <span class="ib-time">${this.minutesToHHMM(b.start)}–${this.minutesToHHMM(b.end)}</span>
+                            <input type="text" value="${(b.text || '').replace(/"/g, '&quot;')}"
+                                   onchange="window.app.updateIdealBlockText(${i}, this.value)" />
+                            <button class="ib-remove" onclick="window.app.removeIdealBlock(${i})">✕</button>
+                        </div>
+                    `).join('');
+            }
+
+            renderSubtaskPanel(task) {
+                const subtasks = task.subtasks || [];
+                const rows = subtasks.map(s => {
+                    const isEditingSub = this.editingSubtaskId === s.id;
+                    const textHtml = isEditingSub ?
+                        `<input type="text" class="subtask-text-input" value="${s.text.replace(/"/g, '&quot;')}"
+                                   id="editSubtaskInput-${s.id}"
+                                   onkeydown="if(event.key==='Enter'){window.app.saveEditSubtask(${task.id}, ${s.id}, this.value);} if(event.key==='Escape'){window.app.cancelEditSubtask();}"
+                                   onblur="window.app.saveEditSubtask(${task.id}, ${s.id}, this.value)}" />` :
+                        `<span class="subtask-text ${s.completed ? 'completed-text' : ''}">${s.text}</span>`;
+                    return `
+                            <div class="subtask-row">
+                                <div class="subtask-checkbox ${s.completed ? 'completed' : ''}" onclick="window.app.toggleSubtask(${task.id}, ${s.id})">${s.completed ? '✓' : ''}</div>
+                                ${textHtml}
+                                <div class="subtask-actions">
+                                    ${isEditingSub ? '' : `<button onclick="window.app.startEditSubtask(${task.id}, ${s.id})" title="Edit">✏️</button>`}
+                                    <button onclick="window.app.deleteSubtask(${task.id}, ${s.id})" title="Delete">✕</button>
+                                </div>
+                            </div>
+                        `;
+                }).join('');
+
+                return `
+                        <div class="subtask-list">
+                            ${rows}
+                            <div class="subtask-add-row">
+                                <input type="text" placeholder="Add subtask..." id="newSubtaskInput-${task.id}"
+                                       onkeydown="if(event.key==='Enter'){window.app.addSubtask(${task.id}, this.value); this.value='';}" />
+                                <button onclick="const inp=document.getElementById('newSubtaskInput-${task.id}'); window.app.addSubtask(${task.id}, inp.value); inp.value='';">➕</button>
+                            </div>
+                        </div>
+                    `;
+            }
+
+            render() {
+                if (this.tasks.length === 0) {
+                    this.taskListEl.innerHTML = `<div class="empty-state">🎯 No subjects added yet</div>`;
+                } else {
+                    const nextTask = this.tasks.find(t => !t.completed);
+                    let html = '';
+                    this.tasks.forEach(task => {
+                        const isActive = nextTask && nextTask.id === task.id;
+                        const totalSec = task.studyTime || 0;
+                        const h = Math.floor(totalSec / 3600);
+                        const m = Math.floor((totalSec % 3600) / 60);
+                        const timeStr = totalSec > 0 ? `${h}h ${m}m` : '0m';
+                        const isTimerRunning = this.timer.isRunning && this.timer.currentTaskId === task.id;
+                        const subtasks = task.subtasks || [];
+                        const subDone = subtasks.filter(s => s.completed).length;
+                        const isExpanded = !!this.expandedSubtasks[task.id];
+                        const isEditingTask = this.editingTaskId === task.id;
+
+                        const taskTextHtml = isEditingTask ?
+                            `<input type="text" class="task-text-input" value="${task.text.replace(/"/g, '&quot;')}"
+                                   id="editTaskInput-${task.id}"
+                                   onkeydown="if(event.key==='Enter'){window.app.saveEditTask(${task.id}, this.value);} if(event.key==='Escape'){window.app.cancelEditTask();}"
+                                   onblur="window.app.saveEditTask(${task.id}, this.value)}" />` :
+                            `<div class="task-text ${task.completed ? 'completed-text' : ''}">
+                                    ${isActive ? '⭐ ' : ''}${task.text}
+                                    ${isTimerRunning ? ' <span style="color:var(--danger-text);font-weight:bold;">🔴</span>' : ''}
+                                </div>`;
+
+                        html += `
+                                <div class="task-item ${isActive ? 'active-task' : ''}" data-task-id="${task.id}">
+                                    <div class="task-main">
+                                        <div class="task-checkbox ${task.completed ? 'completed' : ''}" 
+                                             onclick="window.app.toggleComplete(${task.id})">
+                                            ${task.completed ? '✓' : ''}
+                                        </div>
+                                        ${taskTextHtml}
+                                        ${subtasks.length > 0 ? `<button class="subtask-toggle-btn" onclick="window.app.toggleSubtaskPanel(${task.id})">${isExpanded ? '▾' : '▸'} ${subDone}/${subtasks.length}</button>` : ''}
+                                        <span class="task-study-time">⏱️ ${timeStr}</span>
+                                        <div class="task-actions">
+                                            ${isEditingTask ? '' : `<button onclick="window.app.startEditTask(${task.id})" title="Edit">✏️</button>`}
+                                            <button onclick="window.app.toggleSubtaskPanel(${task.id})" title="Subtasks">📎</button>
+                                            <button onclick="window.app.selectForTimer(${task.id})" title="Select for timer">⏱️</button>
+                                            <button class="delete-btn" onclick="window.app.deleteTask(${task.id})">🗑️</button>
+                                        </div>
+                                    </div>
+                                    ${isExpanded ? this.renderSubtaskPanel(task) : ''}
+                                </div>
+                            `;
+                    });
+                    this.taskListEl.innerHTML = html;
+                }
+
+                const completed = this.tasks.filter(t => t.completed).length;
+                const remaining = this.tasks.filter(t => !t.completed).length;
+                this.completedCount.textContent = completed;
+                this.remainingCount.textContent = remaining;
+
+                const totalSecAll = this.tasks.reduce((sum, t) => sum + (t.studyTime || 0), 0);
+                const th = Math.floor(totalSecAll / 3600);
+                const tm = Math.floor((totalSecAll % 3600) / 60);
+                this.totalStudyTime.textContent = `${th}h ${tm}m`;
+
+                if (this.timer.currentTaskId) {
+                    const task = this.tasks.find(t => t.id === this.timer.currentTaskId);
+                    if (task) {
+                        this.timerTopicName.textContent = task.text;
+                        this.updateTimerInfo(task);
+                        if (this.timer.isRunning) this.timerStatus.textContent = '⏱️ Studying...';
+                    }
+                }
+
+                this.renderIdealDurations();
+
+                if (this.editingTaskId != null) {
+                    const el = document.getElementById(`editTaskInput-${this.editingTaskId}`);
+                    if (el) { el.focus();
+                        el.select(); }
+                }
+                if (this.editingSubtaskId != null) {
+                    const el = document.getElementById(`editSubtaskInput-${this.editingSubtaskId}`);
+                    if (el) { el.focus();
+                        el.select(); }
+                }
+            }
+
+            showToast(message) {
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.animation = 'fadeInUp 0.4s ease reverse';
+                    setTimeout(() => toast.remove(), 400);
+                }, 2200);
+            }
+
+            initEventListeners() {
+                document.getElementById('addTaskBtn').addEventListener('click', () => this.addTask());
+                document.getElementById('taskInput').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault();
+                        this.addTask(); }
+                });
+
+                document.getElementById('bulkAddBtn').addEventListener('click', () => this.bulkAddTasks());
+                this.bulkTextarea.addEventListener('input', () => this.updateBulkCount());
+
+                document.getElementById('timerStartBtn').addEventListener('click', () => this.startTimer());
+                document.getElementById('timerPauseBtn').addEventListener('click', () => this.pauseTimer());
+                document.getElementById('timerResetBtn').addEventListener('click', () => this.resetTimer());
+                document.getElementById('timerSaveBtn').addEventListener('click', () => this.saveTimerTime());
+
+                this.timerGoalInput.addEventListener('change', () => {
+                    const goalVal = parseInt(this.timerGoalInput.value, 10);
+                    this.timer.goalMinutes = isNaN(goalVal) || goalVal < 0 ? 0 : goalVal;
+                    if (this.timer.goalMinutes > 0 && this.timer.seconds < this.timer.goalMinutes * 60) {
+                        this.timer.goalReached = false;
+                    }
+                    this.updateTimerDisplay();
+                    this.saveToStorage();
+                });
+
+                const budgetStartInput = document.getElementById('budgetStart');
+                const budgetEndInput = document.getElementById('budgetEnd');
+                if (this.budget.startTime) budgetStartInput.value = this.budget.startTime;
+                if (this.budget.endTime) budgetEndInput.value = this.budget.endTime;
+                document.getElementById('setBudgetBtn').addEventListener('click', () => {
+                    this.setBudget(budgetStartInput.value || '08:00', budgetEndInput.value || '22:00');
+                });
+
+                document.getElementById('generateIdealBtn').addEventListener('click', () => this.generateIdealPlan());
+
+                if (this.plannerDatePicker) {
+                    this.plannerDatePicker.value = this.plannerViewDate;
+                    this.plannerDatePicker.addEventListener('change', (e) => this.setPlannerViewDate(e.target.value));
+                }
+                const plannerTodayBtn = document.getElementById('plannerTodayBtn');
+                if (plannerTodayBtn) plannerTodayBtn.addEventListener('click', () => this.goToTodayPlanner());
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            window.app = new StudySystem();
+        });
+    </script>
+
+</body>
+</html>
