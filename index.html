@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 Study Planner · Auto Schedule</title>
+    <title>🧠 Study Planner</title>
     <style>
         * {
             margin: 0;
@@ -131,9 +131,7 @@
             padding: 0.2rem 0;
             list-style: none;
         }
-        .bulk-add-section summary::-webkit-details-marker {
-            display: none;
-        }
+        .bulk-add-section summary::-webkit-details-marker { display: none; }
         .bulk-add-area {
             display: flex;
             flex-direction: column;
@@ -244,13 +242,8 @@
             animation: pulseBeat 1s ease-in-out infinite;
         }
         @keyframes pulseBeat {
-            0%,
-            100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.08);
-            }
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
         }
 
         .study-timer-info .topic-name {
@@ -886,9 +879,7 @@
             border-radius: 50px;
             font-weight: 600;
         }
-        .qs-toggle-btn:hover {
-            background: #F3EDFA;
-        }
+        .qs-toggle-btn:hover { background: #F3EDFA; }
 
         /* ---------- Sprint board ---------- */
         .sprint-board-section {
@@ -905,9 +896,7 @@
             font-size: 0.9rem;
             list-style: none;
         }
-        .sprint-board-section summary::-webkit-details-marker {
-            display: none;
-        }
+        .sprint-board-section summary::-webkit-details-marker { display: none; }
         .sprint-board-hint {
             font-size: 0.7rem;
             color: #A398AC;
@@ -919,9 +908,7 @@
             gap: 0.5rem;
         }
         @media (max-width: 768px) {
-            .sprint-board {
-                grid-template-columns: repeat(2, 1fr);
-            }
+            .sprint-board { grid-template-columns: repeat(2, 1fr); }
         }
         .sprint-col {
             background: #FAF6FD;
@@ -949,18 +936,10 @@
             border-radius: 50%;
             display: inline-block;
         }
-        .sprint-1 .dot {
-            background: var(--danger-text);
-        }
-        .sprint-2 .dot {
-            background: #E5A94A;
-        }
-        .sprint-3 .dot {
-            background: var(--primary-text);
-        }
-        .sprint-4 .dot {
-            background: var(--success-text);
-        }
+        .sprint-1 .dot { background: var(--danger-text); }
+        .sprint-2 .dot { background: #E5A94A; }
+        .sprint-3 .dot { background: var(--primary-text); }
+        .sprint-4 .dot { background: var(--success-text); }
         .sprint-card {
             background: white;
             border-radius: 10px;
@@ -974,12 +953,8 @@
             gap: 0.3rem;
             border-left: 3px solid var(--primary);
         }
-        .sprint-card:active {
-            cursor: grabbing;
-        }
-        .sprint-card.drag-ghost {
-            opacity: 0.35;
-        }
+        .sprint-card:active { cursor: grabbing; }
+        .sprint-card.drag-ghost { opacity: 0.35; }
         .sprint-card .sc-text {
             flex: 1;
             overflow: hidden;
@@ -1008,9 +983,7 @@
             padding: 0 0.1rem;
             user-select: none;
         }
-        .task-drag-handle:active {
-            cursor: grabbing;
-        }
+        .task-drag-handle:active { cursor: grabbing; }
         .task-deadline-input {
             width: 108px;
             padding: 0.2rem 0.3rem;
@@ -1030,22 +1003,10 @@
             font-weight: 600;
             white-space: nowrap;
         }
-        .task-sprint-badge.sprint-1 {
-            background: #FBE3EA;
-            color: var(--danger-text);
-        }
-        .task-sprint-badge.sprint-2 {
-            background: #FCEDD3;
-            color: #9A7526;
-        }
-        .task-sprint-badge.sprint-3 {
-            background: #ECE3F7;
-            color: var(--primary-text);
-        }
-        .task-sprint-badge.sprint-4 {
-            background: #DCF3E9;
-            color: var(--success-text);
-        }
+        .task-sprint-badge.sprint-1 { background: #FBE3EA; color: var(--danger-text); }
+        .task-sprint-badge.sprint-2 { background: #FCEDD3; color: #9A7526; }
+        .task-sprint-badge.sprint-3 { background: #ECE3F7; color: var(--primary-text); }
+        .task-sprint-badge.sprint-4 { background: #DCF3E9; color: var(--success-text); }
 
         /* ---------- Work log ---------- */
         .worklog-section {
@@ -1065,9 +1026,7 @@
             align-items: center;
             justify-content: space-between;
         }
-        .worklog-section summary::-webkit-details-marker {
-            display: none;
-        }
+        .worklog-section summary::-webkit-details-marker { display: none; }
         .worklog-count-pill {
             background: #F3EDFA;
             color: var(--primary-text);
@@ -1081,8 +1040,7 @@
             gap: 0.5rem;
             margin: 0.6rem 0;
         }
-        .btn-copy-worklog,
-        .btn-clear-worklog {
+        .btn-copy-worklog, .btn-clear-worklog {
             border: none;
             border-radius: 50px;
             padding: 0.35rem 0.9rem;
@@ -1090,14 +1048,8 @@
             cursor: pointer;
             font-weight: 600;
         }
-        .btn-copy-worklog {
-            background: var(--primary);
-            color: #4A3B5C;
-        }
-        .btn-clear-worklog {
-            background: #FAF6FD;
-            color: #A398AC;
-        }
+        .btn-copy-worklog { background: var(--primary); color: #4A3B5C; }
+        .btn-clear-worklog { background: #FAF6FD; color: #A398AC; }
         .worklog-list {
             display: flex;
             flex-direction: column;
@@ -1118,64 +1070,6 @@
             color: #A398AC;
             text-align: center;
             padding: 0.6rem 0;
-        }
-
-        /* ---- new: precise interval settings ---- */
-        .interval-settings {
-            background: #FAF6FD;
-            border-radius: 14px;
-            padding: 0.8rem 0.9rem;
-            margin: 0.7rem 0 0.2rem;
-            border: 1px solid #E3D9ED;
-        }
-        .interval-settings .row {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            flex-wrap: wrap;
-        }
-        .interval-settings label {
-            font-size: 0.78rem;
-            color: #5A4E66;
-            display: flex;
-            align-items: center;
-            gap: 0.2rem;
-        }
-        .interval-settings input[type="time"] {
-            padding: 0.2rem 0.4rem;
-            border: 1px solid #E3D9ED;
-            border-radius: 10px;
-            font-size: 0.78rem;
-            background: white;
-            width: 100px;
-        }
-        .interval-settings input[type="number"] {
-            width: 60px;
-            padding: 0.2rem 0.3rem;
-            border: 1px solid #E3D9ED;
-            border-radius: 10px;
-            font-size: 0.78rem;
-            background: white;
-            text-align: center;
-        }
-        .interval-settings .hint {
-            font-size: 0.68rem;
-            color: #A398AC;
-            margin-top: 0.3rem;
-        }
-        .btn-precise-schedule {
-            background: var(--primary);
-            color: #4A3B5C;
-            border: none;
-            padding: 0.4rem 1rem;
-            border-radius: 50px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-left: 0.2rem;
-        }
-        .btn-precise-schedule:hover {
-            background: var(--primary-dark);
         }
     </style>
 </head>
@@ -1330,21 +1224,10 @@
 
             <div class="ideal-plan-section">
                 <details id="idealPlanDetails">
-                    <summary>🌟 Ideal plan · <span style="font-weight:400;color:#A398AC;">precise auto‑schedule</span></summary>
-                    <div class="ideal-hint">Set duration (min) for each subject. Then click <strong>Auto‑schedule</strong> below.</div>
-
-                    <!-- new interval settings -->
-                    <div class="interval-settings">
-                        <div class="row">
-                            <label>⏰ Start <input type="time" id="preciseStart" value="08:00"></label>
-                            <label>End <input type="time" id="preciseEnd" value="22:00"></label>
-                            <label>Break <input type="number" id="preciseBreak" min="0" value="30" step="5"> min</label>
-                            <button class="btn-precise-schedule" id="preciseScheduleBtn">⚡ Auto‑schedule</button>
-                        </div>
-                        <div class="hint">Subjects will be placed in sequence, with a break after every 90 min of study.</div>
-                    </div>
-
+                    <summary>🌟 Ideal plan</summary>
+                    <div class="ideal-hint">Set the duration for each subject (min 60 minutes), I'll handle the rest ✨</div>
                     <div class="ideal-durations" id="idealDurations"></div>
+                    <button class="btn-generate-ideal" id="generateIdealBtn">🪄 Auto-schedule my day</button>
                     <div class="ideal-blocks" id="idealBlocks"></div>
                 </details>
             </div>
@@ -1613,13 +1496,9 @@
             jalaliToGregorian(jy, jm, jd) {
                 const div = (a, b) => Math.trunc(a / b);
                 const mod = (a, b) => a - b * div(a, b);
-                const breaks = [-61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192, 2262, 2324, 2394, 2456,
-                    3178
-                ];
+                const breaks = [-61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192, 2262, 2324, 2394, 2456, 3178];
                 const gy0 = jy + 621;
-                let leapJ = -14,
-                    jp = breaks[0],
-                    jump = 0;
+                let leapJ = -14, jp = breaks[0], jump = 0;
                 for (let i = 1; i < breaks.length; i++) {
                     const jm2 = breaks[i];
                     jump = jm2 - jp;
@@ -1641,7 +1520,6 @@
                 const div = (a, b) => Math.trunc(a / b);
                 let d = div((gy + div(gm - 8, 6) + 100100) * 1461, 4) + div(153 * mod(gm + 9, 12) + 2, 5) + gd - 34840408;
                 d = d - div(div(gy + 100100 + div(gm - 8, 6), 100) * 3, 4) + 752;
-
                 function mod(a, b) { return a - b * Math.trunc(a / b); }
                 return d;
             }
@@ -1681,9 +1559,9 @@
                 const target = this.getNext1Mehr();
                 const days = Math.round((target - today) / 86400000);
                 if (days === 0) {
-                    el.textContent = 'Today is 1 Mehr!';
+                    el.textContent = 'امروز ۱ مهره!';
                 } else {
-                    el.textContent = `${days} days until 1 Mehr`;
+                    el.textContent = `${days} روز تا ۱ مهر`;
                 }
             }
 
@@ -1842,6 +1720,8 @@
                 const goalSeconds = this.timer.goalMinutes * 60;
                 const remainingMs = (goalSeconds - this.timer.seconds) * 1000;
                 if (remainingMs <= 0) return;
+                // A single scheduled timeout fires much more reliably in background/inactive
+                // tabs than relying on the polling setInterval, which browsers throttle.
                 this.timer.beepTimeoutId = setTimeout(() => {
                     this.timer.beepTimeoutId = null;
                     if (this.timer.isRunning && !this.timer.goalReached) {
@@ -1954,14 +1834,17 @@
 
                 this.timer.lastBudgetTick = Date.now();
 
+                // Use setInterval for reliable counting
                 this.timer.interval = setInterval(() => {
                     if (this.timer.isRunning) {
                         this.timer.seconds++;
-
+                        
+                        // Update budget
                         if (this.budget.date) {
                             this.budget.usedSeconds++;
                         }
 
+                        // Check goal
                         if (this.timer.goalMinutes > 0) {
                             const goalSeconds = this.timer.goalMinutes * 60;
                             if (this.timer.seconds >= goalSeconds && !this.timer.goalReached) {
@@ -1977,6 +1860,7 @@
                     }
                 }, 1000);
 
+                // Use requestAnimationFrame for smooth display updates
                 const updateDisplay = () => {
                     this.updateTimerDisplay();
                     if (this.timer.isRunning) {
@@ -2042,7 +1926,7 @@
                 this.timer.isPaused = true;
                 this.timer.startTimestamp = null;
                 this.clearGoalBeep();
-
+                
                 if (this.timer.interval) {
                     clearInterval(this.timer.interval);
                     this.timer.interval = null;
@@ -2051,7 +1935,7 @@
                     cancelAnimationFrame(this.timer.frameId);
                     this.timer.frameId = null;
                 }
-
+                
                 this.timerStatus.textContent = '⏸ Paused';
                 this.updateTimerDisplay();
                 this.renderBudget();
@@ -2066,7 +1950,7 @@
                 this.timer.goalReached = false;
                 this.timer.sessionStartClock = null;
                 this.clearGoalBeep();
-
+                
                 if (this.timer.interval) {
                     clearInterval(this.timer.interval);
                     this.timer.interval = null;
@@ -2075,7 +1959,7 @@
                     cancelAnimationFrame(this.timer.frameId);
                     this.timer.frameId = null;
                 }
-
+                
                 this.timer.seconds = 0;
                 this.timer.currentTaskId = null;
                 this.timerStatus.textContent = '⏳ Ready - pick a subject from the list';
@@ -2124,7 +2008,7 @@
                 this.timer.lastBudgetTick = null;
                 this.timer.goalReached = false;
                 this.timer.sessionStartClock = null;
-
+                
                 if (this.timer.interval) {
                     clearInterval(this.timer.interval);
                     this.timer.interval = null;
@@ -2229,7 +2113,7 @@
 
             renderBudget() {
                 if (!this.budgetStats) return;
-
+                
                 this.checkBudgetDayReset();
 
                 const hasBudget = !!this.budget.date;
@@ -2355,25 +2239,24 @@
                 }).join('');
             }
 
-            // ---- PRECISE AUTO-SCHEDULE (respects start/end & break) ----
-            preciseSchedule(startStr, endStr, breakMinutes) {
+            generateIdealPlan() {
                 const pending = this.tasks.filter(t => !t.completed);
-                if (pending.length === 0) { this.showToast('⚠️ No subjects to schedule'); return; }
+                if (pending.length === 0) { this.showToast('⚠️ Add a subject first'); return; }
+
+                const hasBudgetToday = this.budget.date === this.todayStr();
+                const startStr = hasBudgetToday ? this.budget.startTime : '08:00';
+                const endStr = hasBudgetToday ? this.budget.endTime : '22:00';
 
                 let startMin = this.timeStrToMinutes(startStr);
                 let endMin = this.timeStrToMinutes(endStr);
                 if (endMin <= startMin) endMin += 24 * 60;
 
-                const breakMin = Math.max(0, parseInt(breakMinutes, 10) || 30);
-                const blocks = [];
                 let cursor = startMin;
                 let cumulative = 0;
+                const blocks = [];
                 let unscheduled = 0;
 
-                // sort by duration (longest first) to pack efficiently
-                const sorted = [...pending].sort((a, b) => (this.taskDurations[b.id] || 60) - (this.taskDurations[a.id] || 60));
-
-                for (const task of sorted) {
+                for (const task of pending) {
                     const dur = this.taskDurations[task.id] || 60;
                     if (cursor + dur > endMin) { unscheduled++; continue; }
 
@@ -2381,13 +2264,10 @@
                     cursor += dur;
                     cumulative += dur;
 
-                    // insert break after every 90min of study (if enough room)
                     if (cumulative >= 90 && cursor < endMin) {
-                        const breakEnd = Math.min(cursor + breakMin, endMin);
-                        if (breakEnd - cursor >= 5) {
-                            blocks.push({ type: 'break', start: cursor, end: breakEnd, text: 'Break' });
-                            cursor = breakEnd;
-                        }
+                        const breakEnd = Math.min(cursor + 30, endMin);
+                        blocks.push({ type: 'break', start: cursor, end: breakEnd, text: 'Break' });
+                        cursor = breakEnd;
                         cumulative = 0;
                     }
                 }
@@ -2398,18 +2278,10 @@
                 this.renderIdealBlocks();
 
                 if (unscheduled > 0) {
-                    this.showToast(`🪄 Planned, but ${unscheduled} subject(s) didn't fit in the window`);
+                    this.showToast(`🪄 Plan built, but ${unscheduled} subject(s) didn't fit`);
                 } else {
-                    this.showToast('🪄 Precise schedule ready!');
+                    this.showToast('🪄 Your plan for today is ready!');
                 }
-            }
-
-            generateIdealPlan() {
-                // legacy – we use preciseSchedule now
-                const start = document.getElementById('preciseStart').value || '08:00';
-                const end = document.getElementById('preciseEnd').value || '22:00';
-                const brk = document.getElementById('preciseBreak').value || '30';
-                this.preciseSchedule(start, end, brk);
             }
 
             updateIdealBlockText(index, text) {
@@ -2725,14 +2597,13 @@
                 let h = d.getHours();
                 const m = d.getMinutes();
                 const ampm = h >= 12 ? 'PM' : 'AM';
-                h = h % 12;
-                if (h === 0) h = 12;
+                h = h % 12; if (h === 0) h = 12;
                 return `${h}:${m.toString().padStart(2, '0')} ${ampm}`;
             }
 
             logWorkSession(task, startMs, endMs, durationSeconds) {
                 if (!startMs) startMs = endMs - durationSeconds * 1000;
-                if (!durationSeconds || durationSeconds <= 0) return;
+                if (!durationSeconds || durationSeconds <= 0) return; // nothing to log
                 const sprint = task.sprint || 3;
                 const durationLabel = durationSeconds < 60 ?
                     `${durationSeconds}s` :
@@ -2812,20 +2683,6 @@
                 if (copyBtn) copyBtn.addEventListener('click', () => this.copyWorkLog());
                 const clearBtn = document.getElementById('clearWorkLogBtn');
                 if (clearBtn) clearBtn.addEventListener('click', () => this.clearWorkLog());
-
-                // precise schedule
-                const preciseBtn = document.getElementById('preciseScheduleBtn');
-                if (preciseBtn) {
-                    preciseBtn.addEventListener('click', () => {
-                        const start = document.getElementById('preciseStart').value || '08:00';
-                        const end = document.getElementById('preciseEnd').value || '22:00';
-                        const brk = document.getElementById('preciseBreak').value || '30';
-                        this.preciseSchedule(start, end, brk);
-                    });
-                }
-                // also keep the original button for compatibility
-                const genBtn = document.getElementById('generateIdealBtn');
-                if (genBtn) genBtn.addEventListener('click', () => this.generateIdealPlan());
             }
 
             initEventListeners() {
@@ -2861,6 +2718,8 @@
                 document.getElementById('setBudgetBtn').addEventListener('click', () => {
                     this.setBudget(budgetStartInput.value || '08:00', budgetEndInput.value || '22:00');
                 });
+
+                document.getElementById('generateIdealBtn').addEventListener('click', () => this.generateIdealPlan());
 
                 if (this.plannerDatePicker) {
                     this.plannerDatePicker.value = this.plannerViewDate;
