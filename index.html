@@ -64,6 +64,21 @@
         .header-stats span {
             font-weight: bold;
         }
+        .btn-delete-all {
+            background: rgba(255, 255, 255, 0.35);
+            color: var(--danger-text);
+            border: none;
+            padding: 0.4rem 0.9rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .btn-delete-all:hover {
+            background: var(--danger);
+            color: #7A2A40;
+        }
 
         .add-task-section {
             background: white;
@@ -1069,6 +1084,7 @@
                 <div>📋 <span id="remainingCount">0</span></div>
                 <div>⏱️ <span id="totalStudyTime">0h 0m</span></div>
             </div>
+            <button class="btn-delete-all" id="deleteAllTasksBtn" title="Delete all subjects">🗑️ Delete all</button>
         </div>
 
         <div class="quick-strip" id="quickStrip">
@@ -1467,6 +1483,25 @@
                 this.render();
                 this.saveToStorage();
                 if (task.completed) this.showToast(`✅ "${task.text}" done`);
+            }
+
+            deleteAllTasks() {
+                if (this.tasks.length === 0) { this.showToast('⚠️ No subjects to delete'); return; }
+                if (!confirm(`Delete all ${this.tasks.length} subjects? This cannot be undone.`)) return;
+                if (this.timer.isRunning) this.stopTimer();
+                this.tasks = [];
+                this.taskDurations = {};
+                this.timer.currentTaskId = null;
+                this.timer.seconds = 0;
+                this.timer.sessionStartClock = null;
+                this.timerTopicName.textContent = 'No subject selected';
+                this.timerSubtaskLine.style.display = 'none';
+                this.updateTimerDisplay();
+                this.render();
+                this.renderSprintBoard();
+                this.renderIdealDurations();
+                this.saveToStorage();
+                this.showToast('🗑️ All subjects deleted');
             }
 
             deleteTask(taskId) {
@@ -2527,6 +2562,8 @@
                         this.setQuickState(btn.dataset.kind, parseInt(btn.dataset.val, 10));
                     });
                 });
+                const deleteAllBtn = document.getElementById('deleteAllTasksBtn');
+                if (deleteAllBtn) deleteAllBtn.addEventListener('click', () => this.deleteAllTasks());
                 const copyBtn = document.getElementById('copyWorkLogBtn');
                 if (copyBtn) copyBtn.addEventListener('click', () => this.copyWorkLog());
                 const clearBtn = document.getElementById('clearWorkLogBtn');
