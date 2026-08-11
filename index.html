@@ -174,6 +174,32 @@
             color: #8A7B98;
         }
 
+        .timer-mode-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 0.4rem;
+            margin-bottom: 0.6rem;
+        }
+        .timer-mode-btn {
+            border: none;
+            background: #FAF6FD;
+            color: #A398AC;
+            padding: 0.35rem 0.9rem;
+            border-radius: 50px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .timer-mode-btn.active {
+            background: var(--primary);
+            color: #4A3B5C;
+        }
+        .timer-mode-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .study-timer-section {
             background: white;
             border-radius: var(--radius);
@@ -1110,6 +1136,34 @@
             border-radius: 10px;
             font-family: 'Courier New', monospace;
             color: #4A3B5C;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .worklog-entry .wl-entry-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .wl-entry-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.78rem;
+            padding: 0.1rem 0.25rem;
+            border-radius: 6px;
+            flex-shrink: 0;
+            opacity: 0.7;
+        }
+        .wl-entry-btn:hover { opacity: 1; background: #F0EAF9; }
+        .worklog-entry-editing {
+            flex-wrap: wrap;
+            font-family: inherit;
+            background: #F3EDFA;
+        }
+        .worklog-entry-editing .wl-manual-text {
+            min-width: 90px;
         }
         .worklog-empty {
             font-size: 0.75rem;
@@ -1117,6 +1171,95 @@
             text-align: center;
             padding: 0.6rem 0;
         }
+
+        /* ---------- Task info modal (opened from sprint board) ---------- */
+        .task-info-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(74, 59, 92, 0.35);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .task-info-backdrop.active {
+            display: flex;
+        }
+        .task-info-modal {
+            background: white;
+            border-radius: 18px;
+            padding: 1.2rem 1.3rem;
+            max-width: 380px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 12px 40px rgba(74, 59, 92, 0.3);
+        }
+        .ti-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.6rem;
+        }
+        .ti-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #4A3B5C;
+            word-break: break-word;
+        }
+        .ti-close-btn {
+            background: #FAF6FD;
+            border: none;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            flex-shrink: 0;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: #A398AC;
+        }
+        .ti-close-btn:hover { background: #F0EAF9; color: #4A3B5C; }
+        .ti-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid #F3EDFA;
+            font-size: 0.8rem;
+        }
+        .ti-row:last-of-type { border-bottom: none; }
+        .ti-row-label { color: #A398AC; }
+        .ti-row-value { color: #4A3B5C; font-weight: 600; text-align: right; }
+        .ti-subtasks {
+            margin-top: 0.5rem;
+        }
+        .ti-subtask-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.78rem;
+            padding: 0.25rem 0;
+            color: #4A3B5C;
+        }
+        .ti-subtask-item.done { color: #A398AC; text-decoration: line-through; }
+        .ti-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.9rem;
+        }
+        .ti-actions button {
+            flex: 1;
+            border: none;
+            border-radius: 50px;
+            padding: 0.45rem 0.6rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .ti-btn-timer { background: var(--primary); color: #4A3B5C; }
+        .ti-btn-edit { background: #FAF6FD; color: #4A3B5C; }
     </style>
 </head>
 <body>
@@ -1213,6 +1356,10 @@
         </div>
 
         <div class="study-timer-section" id="studyTimerSection">
+            <div class="timer-mode-toggle" id="timerModeToggle">
+                <button class="timer-mode-btn active" data-mode="task" id="timerModeTaskBtn">📚 Task</button>
+                <button class="timer-mode-btn" data-mode="break" id="timerModeBreakBtn">☕ Break</button>
+            </div>
             <div class="timer-visual-wrap" id="timerVisualWrap">
                 <svg viewBox="0 0 150 150">
                     <circle class="timer-track" cx="75" cy="75" r="65"></circle>
@@ -1298,6 +1445,10 @@
 
         <div id="taskList"></div>
 
+        <div class="task-info-backdrop" id="taskInfoBackdrop">
+            <div class="task-info-modal" id="taskInfoModal"></div>
+        </div>
+
     </div>
 
     <script>
@@ -1319,7 +1470,8 @@
                     goalMinutes: 0,
                     goalReached: false,
                     frameId: null,
-                    beepTimeoutId: null
+                    beepTimeoutId: null,
+                    mode: 'task'
                 };
 
                 this.budget = { startTime: '08:00', endTime: '22:00', date: null, usedSeconds: 0 };
@@ -1355,6 +1507,7 @@
 
                 this.state = { mood: null, energy: null, motivation: null };
                 this.workLog = [];
+                this.editingWorkLogId = null;
                 this.sprintBoardEl = document.getElementById('sprintBoard');
                 this.workLogListEl = document.getElementById('workLogList');
                 this.workLogCountEl = document.getElementById('workLogCount');
@@ -1429,7 +1582,7 @@
                         const data = JSON.parse(saved);
                         this.tasks = (data.tasks || []).map(t => ({ subtasks: [], sprint: 3, deadline: null, ...t }));
                         if (data.state) this.state = Object.assign({ mood: null, energy: null, motivation: null }, data.state);
-                        if (data.workLog) this.workLog = data.workLog;
+                        if (data.workLog) this.workLog = data.workLog.map(e => ({ id: e.id || this.makeWorkLogId(), ...e }));
                         this.taskIdCounter = data.taskIdCounter || Date.now();
                         this.timer.seconds = data.timerSeconds || 0;
                         this.timer.currentTaskId = data.timerCurrentTaskId || null;
@@ -1437,6 +1590,7 @@
                         this.timer.startTimestamp = data.timerStartTimestamp || null;
                         this.timer.goalMinutes = data.timerGoalMinutes || 0;
                         this.timer.sessionStartClock = data.timerSessionStartClock || null;
+                        this.timer.mode = data.timerMode === 'break' ? 'break' : 'task';
                         if (data.budget) this.budget = Object.assign(this.budget, data.budget);
                         if (data.plannerByDate) this.plannerByDate = data.plannerByDate;
                         if (data.taskDurations) this.taskDurations = data.taskDurations;
@@ -1462,6 +1616,7 @@
                         timerStartTimestamp: this.timer.startTimestamp,
                         timerGoalMinutes: this.timer.goalMinutes,
                         timerSessionStartClock: this.timer.sessionStartClock || null,
+                        timerMode: this.timer.mode || 'task',
                         budget: this.budget,
                         plannerByDate: this.plannerByDate,
                         taskDurations: this.taskDurations,
@@ -1760,6 +1915,7 @@
                 if (!task) return;
                 if (this.timer.isRunning) this.pauseTimer();
 
+                this.timer.mode = 'task';
                 this.timer.currentTaskId = taskId;
                 this.timer.seconds = 0;
                 this.timer.isRunning = false;
@@ -1771,6 +1927,7 @@
                 this.updateTimerInfo(task);
                 this.updateTimerSubtaskLine();
                 this.timerStatus.textContent = '⏳ Ready - press start';
+                this.updateTimerModeUI();
                 this.updateTimerDisplay();
                 this.saveToStorage();
                 this.render();
@@ -1863,7 +2020,20 @@
             }
 
             resumeTimerIfNeeded() {
-                if (this.timer.isRunning && this.timer.currentTaskId) {
+                if (this.timer.isRunning && this.timer.mode === 'break') {
+                    this.timer.lastBudgetTick = this.timer.startTimestamp || Date.now();
+                    if (this.timer.goalMinutes > 0 && this.timer.seconds >= this.timer.goalMinutes * 60) {
+                        this.timer.goalReached = true;
+                    }
+                    this.syncTimerFromClock();
+                    this.startTimerInterval();
+                    this.scheduleGoalBeep();
+                    this.updateTimerModeUI();
+                    this.timerStatus.textContent = '☕ On a break...';
+                    this.timerTopicName.textContent = '☕ Break';
+                    this.timerTopicStats.textContent = '';
+                    this.timerSubtaskLine.style.display = 'none';
+                } else if (this.timer.isRunning && this.timer.currentTaskId) {
                     const task = this.tasks.find(t => t.id === this.timer.currentTaskId);
                     if (task) {
                         this.timer.lastBudgetTick = this.timer.startTimestamp || Date.now();
@@ -1873,12 +2043,19 @@
                         this.syncTimerFromClock();
                         this.startTimerInterval();
                         this.scheduleGoalBeep();
+                        this.updateTimerModeUI();
                         this.timerStatus.textContent = '⏱️ Studying...';
                         this.timerTopicName.textContent = task.text;
                         this.updateTimerInfo(task);
                         this.updateTimerSubtaskLine();
                     } else {
                         this.timer.isRunning = false;
+                    }
+                } else {
+                    this.updateTimerModeUI();
+                    if (this.timer.mode === 'break' && !this.timer.currentTaskId) {
+                        this.timerTopicName.textContent = '☕ Break';
+                        this.timerTopicStats.textContent = '';
                     }
                 }
                 if (this.timerGoalInput) this.timerGoalInput.value = this.timer.goalMinutes || '';
@@ -1936,17 +2113,21 @@
             }
 
             startTimer() {
-                let task = this.timer.currentTaskId ?
-                    this.tasks.find(t => t.id === this.timer.currentTaskId && !t.completed) :
-                    null;
-                if (!task) task = this.tasks.find(t => !t.completed);
+                let task = null;
+                if (this.timer.mode === 'task') {
+                    task = this.timer.currentTaskId ?
+                        this.tasks.find(t => t.id === this.timer.currentTaskId && !t.completed) :
+                        null;
+                    if (!task) task = this.tasks.find(t => !t.completed);
+                    if (!task) { this.showToast('⚠️ No subject selected'); return; }
 
-                if (!task) { this.showToast('⚠️ No subject selected'); return; }
-
-                if (this.timer.currentTaskId && this.timer.currentTaskId !== task.id) {
-                    this.timer.seconds = 0;
-                    this.timer.goalReached = false;
-                    this.timer.sessionStartClock = null;
+                    if (this.timer.currentTaskId && this.timer.currentTaskId !== task.id) {
+                        this.timer.seconds = 0;
+                        this.timer.goalReached = false;
+                        this.timer.sessionStartClock = null;
+                    }
+                } else {
+                    this.timer.currentTaskId = null;
                 }
                 if (this.timer.seconds === 0 || !this.timer.sessionStartClock) {
                     this.timer.sessionStartClock = Date.now();
@@ -1965,22 +2146,79 @@
                     this.timer.goalReached = false;
                 }
 
-                this.timer.currentTaskId = task.id;
+                if (task) this.timer.currentTaskId = task.id;
                 this.timer.isRunning = true;
                 this.timer.isPaused = false;
                 this.timer.startTimestamp = Date.now();
 
                 this.startTimerInterval();
                 this.scheduleGoalBeep();
+                this.updateTimerModeUI();
 
-                this.timerStatus.textContent = '⏱️ Studying...';
-                this.timerTopicName.textContent = task.text;
-                this.updateTimerInfo(task);
-                this.updateTimerSubtaskLine();
+                if (this.timer.mode === 'break') {
+                    this.timerStatus.textContent = '☕ On a break...';
+                    this.timerTopicName.textContent = '☕ Break';
+                    this.timerTopicStats.textContent = '';
+                    this.timerSubtaskLine.style.display = 'none';
+                    this.showToast('☕ Break started');
+                } else {
+                    this.timerStatus.textContent = '⏱️ Studying...';
+                    this.timerTopicName.textContent = task.text;
+                    this.updateTimerInfo(task);
+                    this.updateTimerSubtaskLine();
+                    this.showToast(`⏱️ Started: ${task.text}`);
+                }
                 this.updateTimerDisplay();
-                this.showToast(`⏱️ Started: ${task.text}`);
                 this.saveToStorage();
                 this.render();
+            }
+
+            setTimerMode(mode) {
+                if (this.timer.isRunning) { this.showToast('⚠️ Stop or save the current timer first'); return; }
+                if (this.timer.mode === mode) return;
+                this.timer.mode = mode;
+                this.timer.seconds = 0;
+                this.timer.currentTaskId = null;
+                this.timer.sessionStartClock = null;
+                this.timer.goalReached = false;
+                this.updateTimerModeUI();
+                if (mode === 'break') {
+                    this.timerTopicName.textContent = '☕ Break';
+                    this.timerTopicStats.textContent = '';
+                    this.timerSubtaskLine.style.display = 'none';
+                    this.timerStatus.textContent = '⏳ Ready for a break';
+                } else {
+                    this.timerTopicName.textContent = 'No subject selected';
+                    this.timerTopicStats.textContent = 'Total studied: 0h 0m';
+                    this.timerStatus.textContent = '⏳ Ready - pick a subject from the list';
+                }
+                this.updateTimerDisplay();
+                this.saveToStorage();
+            }
+
+            updateTimerModeUI() {
+                const taskBtn = document.getElementById('timerModeTaskBtn');
+                const breakBtn = document.getElementById('timerModeBreakBtn');
+                if (!taskBtn || !breakBtn) return;
+                taskBtn.classList.toggle('active', this.timer.mode === 'task');
+                breakBtn.classList.toggle('active', this.timer.mode === 'break');
+                taskBtn.disabled = this.timer.isRunning;
+                breakBtn.disabled = this.timer.isRunning;
+            }
+
+            logBreakSession(startMs, endMs, durationSeconds) {
+                if (!startMs) startMs = endMs - durationSeconds * 1000;
+                if (!durationSeconds || durationSeconds <= 0) return;
+                this.workLog.push({
+                    id: this.makeWorkLogId(),
+                    taskText: '☕ Break',
+                    sprintLabel: 'Break',
+                    startLabel: this.formatClockTime(startMs),
+                    endLabel: this.formatClockTime(endMs),
+                    durationLabel: this.computeDurationLabel(startMs, endMs)
+                });
+                this.saveToStorage();
+                this.renderWorkLog();
             }
 
             pauseTimer() {
@@ -2000,6 +2238,7 @@
                 }
                 
                 this.timerStatus.textContent = '⏸ Paused';
+                this.updateTimerModeUI();
                 this.updateTimerDisplay();
                 this.renderBudget();
                 this.saveToStorage();
@@ -2025,10 +2264,11 @@
                 
                 this.timer.seconds = 0;
                 this.timer.currentTaskId = null;
-                this.timerStatus.textContent = '⏳ Ready - pick a subject from the list';
-                this.timerTopicName.textContent = 'No subject selected';
-                this.timerTopicStats.textContent = 'Total studied: 0h 0m';
+                this.timerStatus.textContent = this.timer.mode === 'break' ? '⏳ Ready for a break' : '⏳ Ready - pick a subject from the list';
+                this.timerTopicName.textContent = this.timer.mode === 'break' ? '☕ Break' : 'No subject selected';
+                this.timerTopicStats.textContent = this.timer.mode === 'break' ? '' : 'Total studied: 0h 0m';
                 this.timerSubtaskLine.style.display = 'none';
+                this.updateTimerModeUI();
                 this.updateTimerDisplay();
                 this.saveToStorage();
                 this.render();
@@ -2053,15 +2293,20 @@
             saveTimerTime() {
                 if (this.timer.seconds === 0) { this.showToast('⚠️ No time to save'); return; }
 
-                const task = this.tasks.find(t => t.id === this.timer.currentTaskId);
-                if (!task) { this.showToast('⚠️ No subject selected'); return; }
-
-                task.studyTime = (task.studyTime || 0) + this.timer.seconds;
                 const h = Math.floor(this.timer.seconds / 3600);
                 const m = Math.floor((this.timer.seconds % 3600) / 60);
-                this.showToast(`💾 ${h}h ${m}m saved for "${task.text}"`);
 
-                this.logWorkSession(task, this.timer.sessionStartClock, Date.now(), this.timer.seconds);
+                if (this.timer.mode === 'break') {
+                    this.logBreakSession(this.timer.sessionStartClock, Date.now(), this.timer.seconds);
+                    this.showToast(`☕ ${h}h ${m}m break saved`);
+                } else {
+                    const task = this.tasks.find(t => t.id === this.timer.currentTaskId);
+                    if (!task) { this.showToast('⚠️ No subject selected'); return; }
+
+                    task.studyTime = (task.studyTime || 0) + this.timer.seconds;
+                    this.showToast(`💾 ${h}h ${m}m saved for "${task.text}"`);
+                    this.logWorkSession(task, this.timer.sessionStartClock, Date.now(), this.timer.seconds);
+                }
                 this.clearGoalBeep();
 
                 this.timer.seconds = 0;
@@ -2081,9 +2326,10 @@
                     this.timer.frameId = null;
                 }
 
-                this.timerStatus.textContent = '⏳ Time saved!';
-                this.timerTopicName.textContent = 'No subject selected';
+                this.timerStatus.textContent = this.timer.mode === 'break' ? '⏳ Break saved!' : '⏳ Time saved!';
+                this.timerTopicName.textContent = this.timer.mode === 'break' ? '☕ Break' : 'No subject selected';
                 this.timerSubtaskLine.style.display = 'none';
+                this.updateTimerModeUI();
                 this.updateTimerDisplay();
                 this.saveToStorage();
                 this.render();
@@ -2598,6 +2844,9 @@
                         e.dataTransfer.effectAllowed = 'move';
                     });
                     card.addEventListener('dragend', () => card.classList.remove('drag-ghost'));
+                    card.addEventListener('click', () => {
+                        this.showTaskInfo(parseInt(card.dataset.taskId, 10));
+                    });
                 });
 
                 this.sprintBoardEl.querySelectorAll('.sprint-col').forEach(col => {
@@ -2620,6 +2869,70 @@
                         this.draggedTaskId = null;
                     });
                 });
+            }
+
+            /* ---------------- Task info modal ---------------- */
+            showTaskInfo(taskId) {
+                const task = this.tasks.find(t => t.id === taskId);
+                if (!task) return;
+                const modal = document.getElementById('taskInfoModal');
+                const backdrop = document.getElementById('taskInfoBackdrop');
+                const sprint = task.sprint || 3;
+                const h = Math.floor((task.studyTime || 0) / 3600);
+                const m = Math.floor(((task.studyTime || 0) % 3600) / 60);
+                const subtasks = task.subtasks || [];
+                const subDone = subtasks.filter(s => s.completed).length;
+
+                let deadlineText = '—';
+                if (task.deadline) {
+                    const today = this.todayStr();
+                    deadlineText = task.deadline + (task.deadline === today ? ' (today)' : task.deadline > today ? ' (upcoming)' : ' (past)');
+                }
+
+                const subtasksHtml = subtasks.length ? `
+                    <div class="ti-subtasks">
+                        ${subtasks.map(s => `<div class="ti-subtask-item ${s.completed ? 'done' : ''}">${s.completed ? '✅' : '⬜'} ${s.text}</div>`).join('')}
+                    </div>
+                ` : '';
+
+                modal.innerHTML = `
+                    <div class="ti-header">
+                        <div class="ti-title">${task.text}</div>
+                        <button class="ti-close-btn" onclick="window.app.closeTaskInfo()">✖</button>
+                    </div>
+                    <div class="ti-row">
+                        <span class="ti-row-label">Sprint / Priority</span>
+                        <span class="ti-row-value task-sprint-badge sprint-${sprint}">${this.sprintLabels[sprint]}</span>
+                    </div>
+                    <div class="ti-row">
+                        <span class="ti-row-label">Deadline</span>
+                        <span class="ti-row-value">${deadlineText}</span>
+                    </div>
+                    <div class="ti-row">
+                        <span class="ti-row-label">Status</span>
+                        <span class="ti-row-value">${task.completed ? '✅ Completed' : '⏳ In progress'}</span>
+                    </div>
+                    <div class="ti-row">
+                        <span class="ti-row-label">Study time</span>
+                        <span class="ti-row-value">${h}h ${m}m</span>
+                    </div>
+                    ${subtasks.length ? `
+                    <div class="ti-row">
+                        <span class="ti-row-label">Subtasks</span>
+                        <span class="ti-row-value">${subDone}/${subtasks.length}</span>
+                    </div>` : ''}
+                    ${subtasksHtml}
+                    <div class="ti-actions">
+                        <button class="ti-btn-timer" onclick="window.app.selectForTimer(${task.id}); window.app.closeTaskInfo();">⏱️ Study this</button>
+                        <button class="ti-btn-edit" onclick="window.app.closeTaskInfo(); window.app.startEditTask(${task.id});">✏️ Edit</button>
+                    </div>
+                `;
+                backdrop.classList.add('active');
+            }
+
+            closeTaskInfo() {
+                const backdrop = document.getElementById('taskInfoBackdrop');
+                backdrop.classList.remove('active');
             }
 
             /* ---------------- Task list reordering (drag handle) ---------------- */
@@ -2665,6 +2978,15 @@
                 return `${h}:${m.toString().padStart(2, '0')} ${ampm}`;
             }
 
+            makeWorkLogId() {
+                return `wl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+            }
+
+            computeDurationLabel(startMs, endMs) {
+                const durationSeconds = Math.max(0, Math.round((endMs - startMs) / 1000));
+                return durationSeconds < 60 ? `${durationSeconds}s` : `${Math.round(durationSeconds / 60)} min`;
+            }
+
             logWorkSession(task, startMs, endMs, durationSeconds) {
                 if (!startMs) startMs = endMs - durationSeconds * 1000;
                 if (!durationSeconds || durationSeconds <= 0) return; // nothing to log
@@ -2673,6 +2995,7 @@
                     `${durationSeconds}s` :
                     `${Math.round(durationSeconds / 60)} min`;
                 this.workLog.push({
+                    id: this.makeWorkLogId(),
                     taskText: task.text,
                     sprintLabel: this.sprintLabels[sprint],
                     startLabel: this.formatClockTime(startMs),
@@ -2683,6 +3006,85 @@
                 this.renderWorkLog();
             }
 
+            parseClockLabelToTimeValue(label) {
+                // "9:34 AM" -> "09:34" for <input type="time">
+                if (!label) return '';
+                const match = label.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+                if (!match) return '';
+                let h = parseInt(match[1], 10);
+                const m = match[2];
+                const ampm = match[3].toUpperCase();
+                if (ampm === 'PM' && h !== 12) h += 12;
+                if (ampm === 'AM' && h === 12) h = 0;
+                return `${h.toString().padStart(2, '0')}:${m}`;
+            }
+
+            timeValueToClockLabel(value) {
+                // "09:34" -> "9:34 AM"
+                if (!value) return '';
+                let [h, m] = value.split(':').map(Number);
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                h = h % 12; if (h === 0) h = 12;
+                return `${h}:${m.toString().padStart(2, '0')} ${ampm}`;
+            }
+
+            startEditWorkLogEntry(id) {
+                this.editingWorkLogId = id;
+                this.renderWorkLog();
+            }
+
+            cancelEditWorkLogEntry() {
+                this.editingWorkLogId = null;
+                this.renderWorkLog();
+            }
+
+            saveEditWorkLogEntry(id) {
+                const entry = this.workLog.find(e => e.id === id);
+                if (!entry) return;
+
+                const textEl = document.getElementById(`wlEditText_${id}`);
+                const sprintEl = document.getElementById(`wlEditSprint_${id}`);
+                const startEl = document.getElementById(`wlEditStart_${id}`);
+                const endEl = document.getElementById(`wlEditEnd_${id}`);
+
+                const text = textEl.value.trim();
+                if (!text) { this.showToast('⚠️ Subject cannot be empty'); return; }
+                if (!startEl.value || !endEl.value) { this.showToast('⚠️ Pick a start and end time'); return; }
+
+                const [sh, sm] = startEl.value.split(':').map(Number);
+                const [eh, em] = endEl.value.split(':').map(Number);
+                const base = new Date();
+                let start = new Date(base.getFullYear(), base.getMonth(), base.getDate(), sh, sm, 0);
+                let end = new Date(base.getFullYear(), base.getMonth(), base.getDate(), eh, em, 0);
+                if (end <= start) end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+
+                entry.taskText = text;
+                entry.sprintLabel = this.sprintLabels[parseInt(sprintEl.value, 10)];
+                entry.startLabel = this.timeValueToClockLabel(startEl.value);
+                entry.endLabel = this.timeValueToClockLabel(endEl.value);
+                entry.durationLabel = this.computeDurationLabel(start.getTime(), end.getTime());
+
+                this.editingWorkLogId = null;
+                this.saveToStorage();
+                this.renderWorkLog();
+                this.showToast('📒 Work log entry updated');
+            }
+
+            deleteWorkLogEntry(id) {
+                const entry = this.workLog.find(e => e.id === id);
+                if (!entry) return;
+                if (!confirm(`Delete this log entry?\n"${entry.taskText} — ${entry.startLabel}–${entry.endLabel}"`)) return;
+                this.workLog = this.workLog.filter(e => e.id !== id);
+                if (this.editingWorkLogId === id) this.editingWorkLogId = null;
+                this.saveToStorage();
+                this.renderWorkLog();
+            }
+
+            sprintKeyForLabel(label) {
+                const found = Object.entries(this.sprintLabels).find(([k, v]) => v === label);
+                return found ? found[0] : '3';
+            }
+
             renderWorkLog() {
                 if (!this.workLogListEl) return;
                 this.workLogCountEl.textContent = this.workLog.length;
@@ -2690,9 +3092,36 @@
                     this.workLogListEl.innerHTML = `<div class="worklog-empty">No sessions recorded yet</div>`;
                     return;
                 }
-                this.workLogListEl.innerHTML = this.workLog.slice().reverse().map(e =>
-                    `<div class="worklog-entry">${e.taskText} — ${e.sprintLabel} — ${e.startLabel}–${e.endLabel} — ${e.durationLabel}</div>`
-                ).join('');
+                this.workLogListEl.innerHTML = this.workLog.slice().reverse().map(e => {
+                    if (this.editingWorkLogId === e.id) {
+                        const startVal = this.parseClockLabelToTimeValue(e.startLabel);
+                        const endVal = this.parseClockLabelToTimeValue(e.endLabel);
+                        const currentSprintKey = this.sprintKeyForLabel(e.sprintLabel);
+                        return `
+                            <div class="worklog-entry worklog-entry-editing">
+                                <input type="text" id="wlEditText_${e.id}" class="wl-manual-text" value="${e.taskText.replace(/"/g, '&quot;')}">
+                                <select id="wlEditSprint_${e.id}" class="wl-manual-sprint">
+                                    <option value="1" ${currentSprintKey === '1' ? 'selected' : ''}>Urgent</option>
+                                    <option value="2" ${currentSprintKey === '2' ? 'selected' : ''}>Deadlines</option>
+                                    <option value="3" ${currentSprintKey === '3' ? 'selected' : ''}>Admin</option>
+                                    <option value="4" ${currentSprintKey === '4' ? 'selected' : ''}>Creative</option>
+                                </select>
+                                <input type="time" id="wlEditStart_${e.id}" class="wl-manual-time" value="${startVal}">
+                                <span class="wl-manual-dash">–</span>
+                                <input type="time" id="wlEditEnd_${e.id}" class="wl-manual-time" value="${endVal}">
+                                <button class="wl-entry-btn wl-save-btn" onclick="window.app.saveEditWorkLogEntry('${e.id}')" title="Save">✅</button>
+                                <button class="wl-entry-btn" onclick="window.app.cancelEditWorkLogEntry()" title="Cancel">✖️</button>
+                            </div>
+                        `;
+                    }
+                    return `
+                        <div class="worklog-entry">
+                            <span class="wl-entry-text">${e.taskText} — ${e.sprintLabel} — ${e.startLabel}–${e.endLabel} — ${e.durationLabel}</span>
+                            <button class="wl-entry-btn" onclick="window.app.startEditWorkLogEntry('${e.id}')" title="Edit">✏️</button>
+                            <button class="wl-entry-btn" onclick="window.app.deleteWorkLogEntry('${e.id}')" title="Delete">🗑️</button>
+                        </div>
+                    `;
+                }).join('');
             }
 
             workLogAsText() {
@@ -2766,6 +3195,7 @@
                 const durationLabel = durationSeconds < 60 ? `${durationSeconds}s` : `${durationMin} min`;
 
                 this.workLog.push({
+                    id: this.makeWorkLogId(),
                     taskText: text,
                     sprintLabel: this.sprintLabels[sprint],
                     startLabel: this.formatClockTime(start.getTime()),
@@ -2835,7 +3265,7 @@
                     this.taskDurations = data.taskDurations || {};
                     this.idealPlan = data.idealPlan || this.idealPlan;
                     this.state = Object.assign({ mood: null, energy: null, motivation: null }, data.state || {});
-                    this.workLog = Array.isArray(data.workLog) ? data.workLog : [];
+                    this.workLog = Array.isArray(data.workLog) ? data.workLog.map(e => ({ id: e.id || this.makeWorkLogId(), ...e })) : [];
 
                     this.timer.currentTaskId = null;
                     this.timer.seconds = 0;
@@ -2883,6 +3313,16 @@
                         importInput.value = '';
                     });
                 }
+
+                const taskInfoBackdrop = document.getElementById('taskInfoBackdrop');
+                if (taskInfoBackdrop) {
+                    taskInfoBackdrop.addEventListener('click', (e) => {
+                        if (e.target === taskInfoBackdrop) this.closeTaskInfo();
+                    });
+                }
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') this.closeTaskInfo();
+                });
             }
 
             initEventListeners() {
@@ -2899,6 +3339,8 @@
                 document.getElementById('timerPauseBtn').addEventListener('click', () => this.pauseTimer());
                 document.getElementById('timerResetBtn').addEventListener('click', () => this.resetTimer());
                 document.getElementById('timerSaveBtn').addEventListener('click', () => this.saveTimerTime());
+                document.getElementById('timerModeTaskBtn').addEventListener('click', () => this.setTimerMode('task'));
+                document.getElementById('timerModeBreakBtn').addEventListener('click', () => this.setTimerMode('break'));
 
                 this.timerGoalInput.addEventListener('change', () => {
                     const goalVal = parseInt(this.timerGoalInput.value, 10);
