@@ -80,6 +80,34 @@
             color: #7A2A40;
         }
 
+        .btn-sync {
+            background: rgba(255, 255, 255, 0.35);
+            color: var(--primary-text);
+            border: none;
+            padding: 0.4rem 0.9rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .btn-sync:hover {
+            background: white;
+        }
+        .btn-sync .sync-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #C7B9D6;
+            flex-shrink: 0;
+        }
+        .btn-sync .sync-dot.connected { background: var(--success-text); }
+        .btn-sync .sync-dot.syncing { background: #E5A94A; animation: pulseBeat 1s ease-in-out infinite; }
+        .btn-sync .sync-dot.error { background: var(--danger-text); }
+
         .add-task-section {
             background: white;
             border-radius: var(--radius);
@@ -1260,6 +1288,52 @@
         }
         .ti-btn-timer { background: var(--primary); color: #4A3B5C; }
         .ti-btn-edit { background: #FAF6FD; color: #4A3B5C; }
+
+        /* ---------- Sync panel ---------- */
+        .sync-modal .ti-row-label { flex-shrink: 0; }
+        .sync-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #F3EDFA;
+        }
+        .sync-field label {
+            font-size: 0.75rem;
+            color: #8A7B98;
+            font-weight: 600;
+        }
+        .sync-field input, .sync-field select {
+            padding: 0.5rem 0.7rem;
+            border: 1px solid #E3D9ED;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-family: inherit;
+        }
+        .sync-hint {
+            font-size: 0.7rem;
+            color: #A398AC;
+            line-height: 1.4;
+            margin: 0.5rem 0;
+        }
+        .sync-hint a { color: var(--primary-text); }
+        .sync-status-line {
+            font-size: 0.78rem;
+            padding: 0.5rem 0.7rem;
+            background: #FAF6FD;
+            border-radius: 10px;
+            margin: 0.6rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .sync-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+        }
+        .sync-toggle-row label { font-size: 0.82rem; color: #4A3B5C; }
     </style>
 </head>
 <body>
@@ -1273,6 +1347,7 @@
                 <div>📋 <span id="remainingCount">0</span></div>
                 <div>⏱️ <span id="totalStudyTime">0h 0m</span></div>
             </div>
+            <button class="btn-sync" id="openSyncBtn" title="Cross-device sync"><span class="sync-dot" id="syncDot"></span><span id="syncBtnLabel">Sync</span></button>
             <button class="btn-delete-all" id="exportJsonBtn" title="Download all data as JSON">⬇️ Export</button>
             <button class="btn-delete-all" id="importJsonBtn" title="Upload a JSON backup">⬆️ Import</button>
             <input type="file" id="importJsonInput" accept="application/json,.json" style="display:none;">
@@ -1449,6 +1524,10 @@
             <div class="task-info-modal" id="taskInfoModal"></div>
         </div>
 
+        <div class="task-info-backdrop" id="syncBackdrop">
+            <div class="task-info-modal sync-modal" id="syncModal"></div>
+        </div>
+
     </div>
 
     <script>
@@ -1519,11 +1598,25 @@
                 this.audioCtx = null;
                 this._saveTimeout = null;
 
+                // ---- Cross-device sync (GitHub Gist) ----
+                this.sync = {
+                    token: '',
+                    gistId: '',
+                    autoSync: false,
+                    lastSyncedAt: null,
+                    lastLocalChangeAt: null,
+                    status: 'idle', // idle | syncing | connected | error
+                    errorMsg: '',
+                    _autoTimer: null,
+                    _pushTimeout: null
+                };
+
                 this.loadFromStorage();
+                this.loadSyncConfig();
                 this.resumeTimerIfNeeded();
                 this.initEventListeners();
 
-                if (this.tasks.length === 0) this.addSampleTasks();
+                if (this.tasks.length === 0 && !this.sync.gistId) this.addSampleTasks();
 
                 this.render();
                 this.updateTimerDisplay();
@@ -1537,6 +1630,12 @@
                 this.renderWorkLog();
                 this.renderMehrCountdown();
                 this.initExtraEventListeners();
+                this.updateSyncButton();
+
+                if (this.sync.gistId && this.sync.token) {
+                    this.pullFromCloud(true);
+                    if (this.sync.autoSync) this.startAutoSync();
+                }
 
                 setInterval(() => this.renderBudget(), 5000);
                 setInterval(() => this.updatePlannerCurrentHour(), 30000);
@@ -1548,6 +1647,7 @@
                         this.updateTimerDisplay();
                         this.renderBudget();
                         this.saveToStorage();
+                        if (this.sync.gistId && this.sync.token) this.pullFromCloud(true);
                     }
                 });
 
@@ -1626,6 +1726,334 @@
                     }));
                     this._saveTimeout = null;
                 }, 500);
+
+                // Mark that local data changed, and debounce-push to cloud if configured.
+                this.sync.lastLocalChangeAt = Date.now();
+                if (this.sync.gistId && this.sync.token) {
+                    if (this.sync._pushTimeout) clearTimeout(this.sync._pushTimeout);
+                    this.sync._pushTimeout = setTimeout(() => {
+                        this.pushToCloud();
+                    }, 2500);
+                }
+            }
+
+            /* =========================================================
+               CROSS-DEVICE SYNC (GitHub Gist)
+               Data is stored as a JSON file inside a private Gist.
+               Any device with the same token + Gist ID stays in sync.
+               ========================================================= */
+
+            loadSyncConfig() {
+                try {
+                    const raw = localStorage.getItem('study_system_sync_config');
+                    if (raw) {
+                        const cfg = JSON.parse(raw);
+                        this.sync.token = cfg.token || '';
+                        this.sync.gistId = cfg.gistId || '';
+                        this.sync.autoSync = !!cfg.autoSync;
+                        this.sync.lastSyncedAt = cfg.lastSyncedAt || null;
+                    }
+                } catch (e) { /* ignore */ }
+            }
+
+            saveSyncConfig() {
+                localStorage.setItem('study_system_sync_config', JSON.stringify({
+                    token: this.sync.token,
+                    gistId: this.sync.gistId,
+                    autoSync: this.sync.autoSync,
+                    lastSyncedAt: this.sync.lastSyncedAt
+                }));
+            }
+
+            getSyncPayload() {
+                return {
+                    tasks: this.tasks,
+                    taskIdCounter: this.taskIdCounter,
+                    timerGoalMinutes: this.timer.goalMinutes,
+                    budget: this.budget,
+                    plannerByDate: this.plannerByDate,
+                    taskDurations: this.taskDurations,
+                    idealPlan: this.idealPlan,
+                    state: this.state,
+                    workLog: this.workLog,
+                    updatedAt: Date.now()
+                };
+            }
+
+            applySyncPayload(data) {
+                if (!data) return;
+                this.tasks = (data.tasks || []).map(t => ({ subtasks: [], sprint: 3, deadline: null, ...t }));
+                this.taskIdCounter = data.taskIdCounter || this.taskIdCounter;
+                if (typeof data.timerGoalMinutes === 'number') this.timer.goalMinutes = data.timerGoalMinutes;
+                if (data.budget) this.budget = Object.assign(this.budget, data.budget);
+                if (data.plannerByDate) this.plannerByDate = data.plannerByDate;
+                if (data.taskDurations) this.taskDurations = data.taskDurations;
+                if (data.idealPlan) this.idealPlan = Object.assign(this.idealPlan, data.idealPlan);
+                if (data.state) this.state = Object.assign({ mood: null, energy: null, motivation: null }, data.state);
+                if (data.workLog) this.workLog = data.workLog.map(e => ({ id: e.id || this.makeWorkLogId(), ...e }));
+
+                localStorage.setItem('study_system_data', JSON.stringify({
+                    tasks: this.tasks,
+                    taskIdCounter: this.taskIdCounter,
+                    timerSeconds: this.timer.seconds,
+                    timerCurrentTaskId: this.timer.currentTaskId,
+                    timerIsRunning: this.timer.isRunning,
+                    timerStartTimestamp: this.timer.startTimestamp,
+                    timerGoalMinutes: this.timer.goalMinutes,
+                    timerSessionStartClock: this.timer.sessionStartClock || null,
+                    timerMode: this.timer.mode || 'task',
+                    budget: this.budget,
+                    plannerByDate: this.plannerByDate,
+                    taskDurations: this.taskDurations,
+                    idealPlan: this.idealPlan,
+                    state: this.state,
+                    workLog: this.workLog
+                }));
+
+                this.render();
+                this.renderSprintBoard();
+                this.renderQuickStrip();
+                this.renderWorkLog();
+                this.renderIdealDurations();
+                this.renderBudget();
+                this.renderPlanner();
+                if (this.timerGoalInput) this.timerGoalInput.value = this.timer.goalMinutes || '';
+            }
+
+            setSyncStatus(status, msg) {
+                this.sync.status = status;
+                this.sync.errorMsg = msg || '';
+                this.updateSyncButton();
+                if (document.getElementById('syncBackdrop').classList.contains('active')) this.renderSyncModal();
+            }
+
+            updateSyncButton() {
+                const dot = document.getElementById('syncDot');
+                const label = document.getElementById('syncBtnLabel');
+                if (!dot || !label) return;
+                dot.classList.remove('connected', 'syncing', 'error');
+                if (!this.sync.gistId || !this.sync.token) {
+                    label.textContent = 'Sync';
+                } else if (this.sync.status === 'syncing') {
+                    dot.classList.add('syncing');
+                    label.textContent = 'Syncing…';
+                } else if (this.sync.status === 'error') {
+                    dot.classList.add('error');
+                    label.textContent = 'Sync error';
+                } else {
+                    dot.classList.add('connected');
+                    label.textContent = 'Synced';
+                }
+            }
+
+            async pushToCloud(silent) {
+                if (!this.sync.gistId || !this.sync.token) return;
+                this.setSyncStatus('syncing');
+                try {
+                    const res = await fetch(`https://api.github.com/gists/${this.sync.gistId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `token ${this.sync.token}`,
+                            'Accept': 'application/vnd.github+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            files: {
+                                'study_planner_data.json': {
+                                    content: JSON.stringify(this.getSyncPayload(), null, 2)
+                                }
+                            }
+                        })
+                    });
+                    if (!res.ok) throw new Error(`GitHub error ${res.status}`);
+                    this.sync.lastSyncedAt = Date.now();
+                    this.saveSyncConfig();
+                    this.setSyncStatus('connected');
+                    if (!silent) this.showToast('☁️ Synced to cloud');
+                } catch (e) {
+                    this.setSyncStatus('error', e.message);
+                    if (!silent) this.showToast('⚠️ Sync failed — check token/Gist ID');
+                }
+            }
+
+            async pullFromCloud(silent) {
+                if (!this.sync.gistId || !this.sync.token) return;
+                this.setSyncStatus('syncing');
+                try {
+                    const res = await fetch(`https://api.github.com/gists/${this.sync.gistId}`, {
+                        headers: {
+                            'Authorization': `token ${this.sync.token}`,
+                            'Accept': 'application/vnd.github+json'
+                        }
+                    });
+                    if (!res.ok) throw new Error(`GitHub error ${res.status}`);
+                    const gist = await res.json();
+                    const file = gist.files && gist.files['study_planner_data.json'];
+                    if (file && file.content) {
+                        const remote = JSON.parse(file.content);
+                        // Only overwrite local if remote is newer than the last local edit,
+                        // so we don't stomp on unsaved local changes.
+                        const remoteTime = remote.updatedAt || 0;
+                        const localTime = this.sync.lastLocalChangeAt || 0;
+                        if (remoteTime > localTime) {
+                            this.applySyncPayload(remote);
+                        }
+                    }
+                    this.sync.lastSyncedAt = Date.now();
+                    this.saveSyncConfig();
+                    this.setSyncStatus('connected');
+                    if (!silent) this.showToast('☁️ Loaded latest from cloud');
+                } catch (e) {
+                    this.setSyncStatus('error', e.message);
+                    if (!silent) this.showToast('⚠️ Could not reach cloud — check token/Gist ID');
+                }
+            }
+
+            async createNewGist() {
+                if (!this.sync.token) { this.showToast('⚠️ Enter your GitHub token first'); return; }
+                this.setSyncStatus('syncing');
+                try {
+                    const res = await fetch('https://api.github.com/gists', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `token ${this.sync.token}`,
+                            'Accept': 'application/vnd.github+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            description: 'Study Planner sync data',
+                            public: false,
+                            files: {
+                                'study_planner_data.json': {
+                                    content: JSON.stringify(this.getSyncPayload(), null, 2)
+                                }
+                            }
+                        })
+                    });
+                    if (!res.ok) throw new Error(`GitHub error ${res.status}`);
+                    const gist = await res.json();
+                    this.sync.gistId = gist.id;
+                    this.sync.lastSyncedAt = Date.now();
+                    this.saveSyncConfig();
+                    this.setSyncStatus('connected');
+                    this.renderSyncModal();
+                    this.showToast('☁️ New sync Gist created — copy the Gist ID to your other device');
+                } catch (e) {
+                    this.setSyncStatus('error', e.message);
+                    this.showToast('⚠️ Could not create Gist — check your token');
+                }
+            }
+
+            startAutoSync() {
+                if (this.sync._autoTimer) clearInterval(this.sync._autoTimer);
+                this.sync._autoTimer = setInterval(() => {
+                    if (this.sync.gistId && this.sync.token) this.pullFromCloud(true);
+                }, 30000);
+            }
+
+            stopAutoSync() {
+                if (this.sync._autoTimer) {
+                    clearInterval(this.sync._autoTimer);
+                    this.sync._autoTimer = null;
+                }
+            }
+
+            toggleAutoSync(enabled) {
+                this.sync.autoSync = enabled;
+                this.saveSyncConfig();
+                if (enabled) this.startAutoSync();
+                else this.stopAutoSync();
+            }
+
+            openSyncPanel() {
+                this.renderSyncModal();
+                document.getElementById('syncBackdrop').classList.add('active');
+            }
+
+            closeSyncPanel() {
+                document.getElementById('syncBackdrop').classList.remove('active');
+            }
+
+            saveSyncFieldsFromForm() {
+                const tokenEl = document.getElementById('syncTokenInput');
+                const gistEl = document.getElementById('syncGistIdInput');
+                if (tokenEl) this.sync.token = tokenEl.value.trim();
+                if (gistEl) this.sync.gistId = gistEl.value.trim();
+                this.saveSyncConfig();
+            }
+
+            connectSync() {
+                this.saveSyncFieldsFromForm();
+                if (!this.sync.token) { this.showToast('⚠️ Enter your GitHub token'); return; }
+                if (!this.sync.gistId) {
+                    this.createNewGist();
+                } else {
+                    this.pullFromCloud().then(() => this.pushToCloud(true));
+                }
+            }
+
+            disconnectSync() {
+                this.sync.token = '';
+                this.sync.gistId = '';
+                this.sync.autoSync = false;
+                this.sync.status = 'idle';
+                this.stopAutoSync();
+                this.saveSyncConfig();
+                this.updateSyncButton();
+                this.renderSyncModal();
+                this.showToast('☁️ Sync disconnected on this device');
+            }
+
+            renderSyncModal() {
+                const modal = document.getElementById('syncModal');
+                if (!modal) return;
+                const connected = !!(this.sync.gistId && this.sync.token);
+                const lastSyncedText = this.sync.lastSyncedAt ?
+                    new Date(this.sync.lastSyncedAt).toLocaleTimeString() : '—';
+
+                let statusHtml = '';
+                if (this.sync.status === 'error') {
+                    statusHtml = `<div class="sync-status-line">⚠️ ${this.sync.errorMsg || 'Sync error'}</div>`;
+                } else if (connected) {
+                    statusHtml = `<div class="sync-status-line">✅ Connected — last synced ${lastSyncedText}</div>`;
+                }
+
+                modal.innerHTML = `
+                    <div class="ti-header">
+                        <div class="ti-title">☁️ Cross-device sync</div>
+                        <button class="ti-close-btn" onclick="window.app.closeSyncPanel()">✖</button>
+                    </div>
+                    <div class="sync-hint">
+                        Syncs your data through a private GitHub Gist. Use the same token + Gist ID on every device.
+                        Create a token at <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">github.com/settings/tokens</a> with the <b>gist</b> scope only.
+                    </div>
+                    <div class="sync-field">
+                        <label for="syncTokenInput">GitHub personal access token</label>
+                        <input type="password" id="syncTokenInput" placeholder="ghp_..." value="${(this.sync.token || '').replace(/"/g, '&quot;')}" />
+                    </div>
+                    <div class="sync-field">
+                        <label for="syncGistIdInput">Gist ID ${connected ? '' : '(leave empty to create a new one)'}</label>
+                        <input type="text" id="syncGistIdInput" placeholder="e.g. 3a1f9c2b8e..." value="${(this.sync.gistId || '').replace(/"/g, '&quot;')}" />
+                    </div>
+                    ${statusHtml}
+                    <div class="sync-toggle-row">
+                        <label for="syncAutoToggle">🔄 Auto-pull every 30s</label>
+                        <input type="checkbox" id="syncAutoToggle" ${this.sync.autoSync ? 'checked' : ''} />
+                    </div>
+                    <div class="ti-actions">
+                        <button class="ti-btn-timer" id="syncConnectBtn">${connected ? '🔄 Sync now' : '🔗 Connect'}</button>
+                        <button class="ti-btn-edit" id="syncPushBtn" ${connected ? '' : 'style="display:none;"'}>⬆️ Push local</button>
+                    </div>
+                    ${connected ? `<div class="ti-actions"><button class="ti-btn-edit" id="syncDisconnectBtn">🔌 Disconnect this device</button></div>` : ''}
+                `;
+
+                document.getElementById('syncConnectBtn').addEventListener('click', () => this.connectSync());
+                const pushBtn = document.getElementById('syncPushBtn');
+                if (pushBtn) pushBtn.addEventListener('click', () => { this.saveSyncFieldsFromForm(); this.pushToCloud(); });
+                const disconnectBtn = document.getElementById('syncDisconnectBtn');
+                if (disconnectBtn) disconnectBtn.addEventListener('click', () => this.disconnectSync());
+                const autoToggle = document.getElementById('syncAutoToggle');
+                if (autoToggle) autoToggle.addEventListener('change', (e) => this.toggleAutoSync(e.target.checked));
             }
 
             updateBulkCount() {
@@ -2553,14 +2981,31 @@
                 if (pending.length === 0) { this.showToast('⚠️ Add a subject first'); return; }
 
                 const hasBudgetToday = this.budget.date === this.todayStr();
-                const startStr = hasBudgetToday ? this.budget.startTime : '08:00';
-                const endStr = hasBudgetToday ? this.budget.endTime : '22:00';
+                // Fall back to whatever is currently typed in the window inputs (even if
+                // "Set today's window" hasn't been pressed yet), instead of a hardcoded 08:00–22:00.
+                const budgetStartInput = document.getElementById('budgetStart');
+                const budgetEndInput = document.getElementById('budgetEnd');
+                const startStr = hasBudgetToday ? this.budget.startTime :
+                    (budgetStartInput && budgetStartInput.value) || '08:00';
+                const endStr = hasBudgetToday ? this.budget.endTime :
+                    (budgetEndInput && budgetEndInput.value) || '22:00';
 
                 let startMin = this.timeStrToMinutes(startStr);
                 let endMin = this.timeStrToMinutes(endStr);
                 if (endMin <= startMin) endMin += 24 * 60;
 
+                // Never schedule into the past: begin at "now" if the window has already started today.
+                const now = new Date();
+                let nowMin = now.getHours() * 60 + now.getMinutes();
+                if (nowMin < startMin) nowMin += 0; // window hasn't started yet, keep startMin as-is
                 let cursor = startMin;
+                if (nowMin > startMin) cursor = nowMin;
+
+                if (cursor >= endMin) {
+                    this.showToast('⚠️ Today\'s study window has already ended — adjust it or plan for tomorrow');
+                    return;
+                }
+
                 let cumulative = 0;
                 const blocks = [];
                 let unscheduled = 0;
@@ -2586,10 +3031,12 @@
                 this.saveToStorage();
                 this.renderIdealBlocks();
 
-                if (unscheduled > 0) {
-                    this.showToast(`🪄 Plan built, but ${unscheduled} subject(s) didn't fit`);
+                if (blocks.filter(b => b.type === 'study').length === 0) {
+                    this.showToast('⚠️ No subjects fit in the remaining window — shorten durations or extend the window');
+                } else if (unscheduled > 0) {
+                    this.showToast(`🪄 Plan built for the rest of today, but ${unscheduled} subject(s) didn't fit`);
                 } else {
-                    this.showToast('🪄 Your plan for today is ready!');
+                    this.showToast('🪄 Your plan for the rest of today is ready!');
                 }
             }
 
@@ -3280,6 +3727,7 @@
                     this.renderIdealDurations();
                     this.updateTimerDisplay();
                     this.showToast('⬆️ Data imported');
+                    if (this.sync.gistId && this.sync.token) this.pushToCloud();
                 };
                 reader.readAsText(file);
             }
@@ -3320,8 +3768,18 @@
                         if (e.target === taskInfoBackdrop) this.closeTaskInfo();
                     });
                 }
+
+                const openSyncBtn = document.getElementById('openSyncBtn');
+                if (openSyncBtn) openSyncBtn.addEventListener('click', () => this.openSyncPanel());
+                const syncBackdrop = document.getElementById('syncBackdrop');
+                if (syncBackdrop) {
+                    syncBackdrop.addEventListener('click', (e) => {
+                        if (e.target === syncBackdrop) this.closeSyncPanel();
+                    });
+                }
+
                 document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape') this.closeTaskInfo();
+                    if (e.key === 'Escape') { this.closeTaskInfo(); this.closeSyncPanel(); }
                 });
             }
 
