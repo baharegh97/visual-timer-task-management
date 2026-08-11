@@ -1040,6 +1040,52 @@
             gap: 0.5rem;
             margin: 0.6rem 0;
         }
+        .worklog-manual-row {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.6rem;
+            padding: 0.4rem;
+            background: #FAF6FD;
+            border-radius: 10px;
+        }
+        .wl-manual-text {
+            flex: 1;
+            min-width: 110px;
+            padding: 0.3rem 0.5rem;
+            border: 1px solid #E3D9ED;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-family: inherit;
+        }
+        .wl-manual-sprint {
+            padding: 0.3rem 0.4rem;
+            border: 1px solid #E3D9ED;
+            border-radius: 8px;
+            font-size: 0.72rem;
+            font-family: inherit;
+            background: white;
+        }
+        .wl-manual-time {
+            padding: 0.25rem 0.35rem;
+            border: 1px solid #E3D9ED;
+            border-radius: 8px;
+            font-size: 0.72rem;
+            font-family: inherit;
+            width: 92px;
+        }
+        .wl-manual-dash { color: #A398AC; font-size: 0.75rem; }
+        .btn-add-manual-wl {
+            background: var(--primary);
+            color: #4A3B5C;
+            border: none;
+            border-radius: 8px;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
         .btn-copy-worklog, .btn-clear-worklog {
             border: none;
             border-radius: 50px;
@@ -1084,6 +1130,9 @@
                 <div>📋 <span id="remainingCount">0</span></div>
                 <div>⏱️ <span id="totalStudyTime">0h 0m</span></div>
             </div>
+            <button class="btn-delete-all" id="exportJsonBtn" title="Download all data as JSON">⬇️ Export</button>
+            <button class="btn-delete-all" id="importJsonBtn" title="Upload a JSON backup">⬆️ Import</button>
+            <input type="file" id="importJsonInput" accept="application/json,.json" style="display:none;">
             <button class="btn-delete-all" id="deleteAllTasksBtn" title="Delete all subjects">🗑️ Delete all</button>
         </div>
 
@@ -1125,6 +1174,20 @@
             <div class="worklog-toolbar">
                 <button class="btn-copy-worklog" id="copyWorkLogBtn">📋 Copy work log</button>
                 <button class="btn-clear-worklog" id="clearWorkLogBtn">🗑️ Clear</button>
+            </div>
+            <div class="worklog-manual-row" id="worklogManualRow">
+                <input type="text" id="wlManualText" class="wl-manual-text" placeholder="Subject / task" list="wlTaskOptions">
+                <datalist id="wlTaskOptions"></datalist>
+                <select id="wlManualSprint" class="wl-manual-sprint">
+                    <option value="1">Urgent</option>
+                    <option value="2">Deadlines</option>
+                    <option value="3" selected>Admin</option>
+                    <option value="4">Creative</option>
+                </select>
+                <input type="time" id="wlManualStart" class="wl-manual-time">
+                <span class="wl-manual-dash">–</span>
+                <input type="time" id="wlManualEnd" class="wl-manual-time">
+                <button class="btn-add-manual-wl" id="wlManualAddBtn">➕ Add</button>
             </div>
             <div class="worklog-list" id="workLogList"></div>
         </details>
@@ -1559,9 +1622,9 @@
                 const target = this.getNext1Mehr();
                 const days = Math.round((target - today) / 86400000);
                 if (days === 0) {
-                    el.textContent = 'امروز ۱ مهره!';
+                    el.textContent = 'Today is 1 Mehr!';
                 } else {
-                    el.textContent = `${days} روز تا ۱ مهر`;
+                    el.textContent = `${days} days to 1 Mehr`;
                 }
             }
 
@@ -2403,6 +2466,7 @@
                     this.taskListEl.innerHTML = html;
                     this.bindTaskListDrag();
                 }
+                this.populateWlTaskOptions();
 
                 const completed = this.tasks.filter(t => t.completed).length;
                 const remaining = this.tasks.filter(t => !t.completed).length;
@@ -2671,6 +2735,125 @@
                 this.renderWorkLog();
             }
 
+            populateWlTaskOptions() {
+                const dl = document.getElementById('wlTaskOptions');
+                if (!dl) return;
+                dl.innerHTML = this.tasks.map(t => `<option value="${t.text.replace(/"/g, '&quot;')}"></option>`).join('');
+            }
+
+            addManualWorkLogEntry() {
+                const textEl = document.getElementById('wlManualText');
+                const sprintEl = document.getElementById('wlManualSprint');
+                const startEl = document.getElementById('wlManualStart');
+                const endEl = document.getElementById('wlManualEnd');
+
+                const text = textEl.value.trim();
+                if (!text) { this.showToast('⚠️ Enter a subject / task name'); return; }
+                if (!startEl.value || !endEl.value) { this.showToast('⚠️ Pick a start and end time'); return; }
+
+                const [sh, sm] = startEl.value.split(':').map(Number);
+                const [eh, em] = endEl.value.split(':').map(Number);
+
+                const now = new Date();
+                let start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), sh, sm, 0);
+                let end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eh, em, 0);
+                // Support entries that cross midnight, e.g. 23:30-00:15
+                if (end <= start) end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+
+                const durationSeconds = Math.round((end - start) / 1000);
+                const sprint = parseInt(sprintEl.value, 10);
+                const durationMin = Math.round(durationSeconds / 60);
+                const durationLabel = durationSeconds < 60 ? `${durationSeconds}s` : `${durationMin} min`;
+
+                this.workLog.push({
+                    taskText: text,
+                    sprintLabel: this.sprintLabels[sprint],
+                    startLabel: this.formatClockTime(start.getTime()),
+                    endLabel: this.formatClockTime(end.getTime()),
+                    durationLabel
+                });
+                this.saveToStorage();
+                this.renderWorkLog();
+
+                textEl.value = '';
+                startEl.value = '';
+                endEl.value = '';
+                this.showToast('📒 Work log entry added');
+            }
+
+            /* ---------------- Export / Import JSON ---------------- */
+            exportData() {
+                const data = {
+                    exportedAt: new Date().toISOString(),
+                    tasks: this.tasks,
+                    taskIdCounter: this.taskIdCounter,
+                    timerGoalMinutes: this.timer.goalMinutes,
+                    budget: this.budget,
+                    plannerByDate: this.plannerByDate,
+                    taskDurations: this.taskDurations,
+                    idealPlan: this.idealPlan,
+                    state: this.state,
+                    workLog: this.workLog
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const dateStr = new Date().toISOString().slice(0, 10);
+                a.href = url;
+                a.download = `study-planner-backup-${dateStr}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                this.showToast('⬇️ Data exported');
+            }
+
+            importData(file) {
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    let data;
+                    try {
+                        data = JSON.parse(e.target.result);
+                    } catch (err) {
+                        this.showToast('⚠️ Invalid JSON file');
+                        return;
+                    }
+                    if (!data || !Array.isArray(data.tasks)) {
+                        this.showToast('⚠️ File does not look like a valid backup');
+                        return;
+                    }
+                    if (!confirm('Import this file? It will replace all current data.')) return;
+
+                    if (this.timer.isRunning) this.stopTimer();
+
+                    this.tasks = data.tasks.map(t => ({ subtasks: [], sprint: 3, deadline: null, ...t }));
+                    this.taskIdCounter = data.taskIdCounter || (Math.max(0, ...this.tasks.map(t => t.id || 0)) + 1);
+                    this.timer.goalMinutes = data.timerGoalMinutes || 0;
+                    this.budget = data.budget || this.budget;
+                    this.plannerByDate = data.plannerByDate || {};
+                    this.taskDurations = data.taskDurations || {};
+                    this.idealPlan = data.idealPlan || this.idealPlan;
+                    this.state = Object.assign({ mood: null, energy: null, motivation: null }, data.state || {});
+                    this.workLog = Array.isArray(data.workLog) ? data.workLog : [];
+
+                    this.timer.currentTaskId = null;
+                    this.timer.seconds = 0;
+                    this.timer.sessionStartClock = null;
+                    this.timer.goalReached = false;
+
+                    this.saveToStorage();
+                    this.render();
+                    this.renderSprintBoard();
+                    this.renderQuickStrip();
+                    this.renderWorkLog();
+                    this.renderIdealDurations();
+                    this.updateTimerDisplay();
+                    this.showToast('⬆️ Data imported');
+                };
+                reader.readAsText(file);
+            }
+
             initExtraEventListeners() {
                 document.querySelectorAll('.qs-emoji').forEach(btn => {
                     btn.addEventListener('click', () => {
@@ -2683,6 +2866,23 @@
                 if (copyBtn) copyBtn.addEventListener('click', () => this.copyWorkLog());
                 const clearBtn = document.getElementById('clearWorkLogBtn');
                 if (clearBtn) clearBtn.addEventListener('click', () => this.clearWorkLog());
+
+                const wlAddBtn = document.getElementById('wlManualAddBtn');
+                if (wlAddBtn) wlAddBtn.addEventListener('click', () => this.addManualWorkLogEntry());
+                this.populateWlTaskOptions();
+
+                const exportBtn = document.getElementById('exportJsonBtn');
+                if (exportBtn) exportBtn.addEventListener('click', () => this.exportData());
+                const importBtn = document.getElementById('importJsonBtn');
+                const importInput = document.getElementById('importJsonInput');
+                if (importBtn && importInput) {
+                    importBtn.addEventListener('click', () => importInput.click());
+                    importInput.addEventListener('change', (e) => {
+                        const file = e.target.files[0];
+                        this.importData(file);
+                        importInput.value = '';
+                    });
+                }
             }
 
             initEventListeners() {
